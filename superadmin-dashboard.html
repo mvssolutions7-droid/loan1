@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Admin Dashboard | Loan Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { transition: background-color 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950">
+  <div id="app"></div>
+  <script>
+    const STORAGE_KEY = 'loan_management_data';
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+    function logout() { localStorage.removeItem(STORAGE_KEY); window.location.href = 'index.html'; }
+
+    function render() {
+      document.getElementById('app').innerHTML = `
+        <div class="flex min-h-screen">
+          <aside class="w-64 fixed h-full bg-white dark:bg-slate-900 border-r">
+            <div class="h-16 flex items-center px-6 border-b"><span class="font-bold text-xl">Super Admin</span></div>
+            <div class="p-4"><div class="flex items-center gap-3 p-3 rounded-xl bg-slate-100 dark:bg-slate-800 mb-6"><div class="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center">SA</div><div><h4 class="font-semibold">Super Admin</h4><p class="text-xs">full access</p></div></div>
+            <nav class="space-y-1"><button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">📊 Dashboard</button><button onclick="showSection('companies')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">🏢 Companies</button><button onclick="showSection('admins')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">👥 Admins</button><button onclick="showSection('subscriptions')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">📅 Subscriptions</button><button onclick="showSection('api')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">🔌 API Settings</button><button onclick="showSection('audit')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100">📜 Audit Logs</button><button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500">🚪 Logout</button></nav></div>
+          </aside>
+          <main class="flex-1 ml-64 p-6"><div id="content" class="animate-fade-in"></div></main>
+        </div>
+      `;
+      showSection('dashboard');
+    }
+
+    function showSection(section) {
+      const content = document.getElementById('content');
+      if (section === 'dashboard') {
+        content.innerHTML = `<div class="space-y-6"><div class="p-8 rounded-3xl bg-gradient-to-r from-indigo-900 to-purple-900 text-white shadow-xl"><h3 class="text-2xl font-black">Super Admin Console</h3><p class="text-sm text-indigo-200">Full system control over all companies, admins, and subscriptions</p></div><div class="grid grid-cols-4 gap-6"><div class="p-6 bg-white rounded-3xl border shadow-sm"><p class="text-slate-400">Companies</p><p class="text-3xl font-black">8</p></div><div class="p-6 bg-white rounded-3xl border shadow-sm"><p class="text-slate-400">Admins</p><p class="text-3xl font-black">12</p></div><div class="p-6 bg-white rounded-3xl border shadow-sm"><p class="text-slate-400">Active Subs</p><p class="text-3xl font-black">7</p></div><div class="p-6 bg-white rounded-3xl border shadow-sm"><p class="text-slate-400">Revenue</p><p class="text-3xl font-black">₹12.5L</p></div></div></div>`;
+      }
+      else if (section === 'companies') {
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">Partner Companies</h4><div class="space-y-3"><div class="p-4 border rounded-xl flex justify-between items-center"><div><p class="font-bold">ABC Finance Ltd</p><p class="text-xs text-slate-400">admin@abc.com</p></div><span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Active</span></div><div class="p-4 border rounded-xl flex justify-between items-center"><div><p class="font-bold">XYZ Capital</p><p class="text-xs text-slate-400">admin@xyz.com</p></div><span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Active</span></div></div><button class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ Add Company</button></div>`;
+      }
+      else if (section === 'admins') {
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">Admin Users</h4><div class="space-y-2">${['Rahul Mehta', 'Priya Sharma', 'Amit Kumar'].map(a => `<div class="p-3 border rounded-lg flex justify-between items-center"><span>${a}</span><span class="text-green-600 text-xs">Active</span></div>`).join('')}</div><button class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">+ Add Admin</button></div>`;
+      }
+      else if (section === 'subscriptions') {
+        content.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6"><div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center shadow-sm"><h4 class="font-bold text-xl">Basic</h4><p class="text-2xl font-bold mt-2">₹49,999<span class="text-sm">/year</span></p><p class="text-xs text-slate-400 mt-2">Up to 500 apps/month</p></div><div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center bg-blue-50 dark:bg-blue-950/20 shadow-sm"><h4 class="font-bold text-xl">Premium</h4><p class="text-2xl font-bold mt-2">₹99,999<span class="text-sm">/year</span></p><p class="text-xs text-slate-400 mt-2">Up to 2000 apps/month</p></div><div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center shadow-sm"><h4 class="font-bold text-xl">Enterprise</h4><p class="text-2xl font-bold mt-2">Custom</p><p class="text-xs text-slate-400 mt-2">Unlimited</p></div></div>`;
+      }
+      else if (section === 'api') {
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">API Configuration</h4><div class="space-y-4"><div class="p-4 border rounded-xl"><p class="font-bold">SMS Gateway</p><p class="text-sm text-slate-400">TWILIO - Configured</p><button class="mt-2 px-3 py-1 border rounded text-sm">Test Connection</button></div><div class="p-4 border rounded-xl"><p class="font-bold">Email Service</p><p class="text-sm text-slate-400">SMTP - Configured</p><button class="mt-2 px-3 py-1 border rounded text-sm">Test Connection</button></div><div class="p-4 border rounded-xl"><p class="font-bold">WhatsApp API</p><p class="text-sm text-slate-400">WhatsApp Business - Configured</p><button class="mt-2 px-3 py-1 border rounded text-sm">Test Connection</button></div></div></div>`;
+      }
+      else if (section === 'audit') {
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">System Audit Logs</h4><div class="space-y-2"><div class="p-3 border-b text-sm"><span class="text-slate-400">2026-06-05 10:30:15</span> - Admin logged in</div><div class="p-3 border-b text-sm"><span class="text-slate-400">2026-06-05 09:45:22</span> - New application submitted</div><div class="p-3 border-b text-sm"><span class="text-slate-400">2026-06-04 18:20:10</span> - Bank policy updated</div></div><button class="mt-4 px-4 py-2 border rounded text-sm">Export Logs</button></div>`;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

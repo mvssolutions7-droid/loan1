@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Dashboard | Loan Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { transition: background-color 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+    .preview-image { cursor: pointer; transition: transform 0.2s; }
+    .preview-image:hover { transform: scale(1.02); }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950">
+  <div id="app"></div>
+  <div id="modal-container" class="fixed inset-0 z-50 hidden"></div>
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+  <script>
+    const STORAGE_KEY = 'loan_management_data';
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    let currentUser = state.currentUser || {};
+
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let classes = 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/80';
+      if (type === 'error') classes = 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/80';
+      else if (type === 'warning') classes = 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/80';
+      toast.className = `p-4 rounded-xl shadow-lg border animate-slide-in ${classes}`;
+      toast.innerHTML = `<div class="text-xs font-semibold">${message}</div><button onclick="this.parentElement.remove()" class="ml-4 text-xs opacity-70">✕</button>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function logout() { 
+      state.currentUser = null;
+      saveData(); 
+      window.location.href = 'index.html'; 
+    }
+
+    // File to Base64 conversion
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    // Preview document in modal
+    function previewDocument(dataUrl, fileName, fileType) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" onclick="closePreviewModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b">
+              <h4 class="font-bold">📄 Document Preview: ${fileName}</h4>
+              <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            <div class="flex justify-center items-center min-h-[300px]">
+              ${fileType === 'image' ? 
+                `<img src="${dataUrl}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
+                `<iframe src="${dataUrl}" class="w-full h-[70vh] border-0 rounded"></iframe>`
+              }
+            </div>
+            <div class="mt-3 flex justify-end">
+              <button onclick="window.open('${dataUrl}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+    }
+
+    function closePreviewModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.add('hidden');
+      modalContainer.innerHTML = '';
+    }
+
+    window.previewDocument = previewDocument;
+    window.closePreviewModal = closePreviewModal;
+
+    // Show application details modal with document preview
+    function showApplicationModal(app) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-3 sticky top-0 bg-white dark:bg-slate-900">
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">📋 Application Details</h3>
+              <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600 transition">×</button>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Application ID</p><p class="font-bold text-blue-600">${app.id}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Status</p><p class="font-bold"><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Customer Name</p><p class="font-bold">${app.customerName}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Email</p><p class="font-bold">${app.customerEmail}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Mobile</p><p class="font-bold">${app.customerMobile}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Loan Amount</p><p class="font-bold text-green-600">₹${app.loanAmount?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Monthly Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">CIBIL Score</p><p class="font-bold">${app.cibilScore}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Loan Purpose</p><p class="font-bold">${app.loanPurpose}</p></div>
+              </div>
+              
+              ${app.assignedBank ? `<div class="p-3 bg-green-50 dark:bg-green-950/30 rounded-xl"><p class="text-xs text-slate-400">Assigned Bank</p><p class="font-bold text-green-600">🏦 ${app.assignedBank}</p></div>` : '<div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl"><p class="text-xs text-slate-400">Bank Assignment</p><p class="font-bold text-amber-600">⏳ Pending</p></div>'}
+              
+              <!-- Documents Section with Preview -->
+              <div class="border rounded-xl p-4">
+                <p class="text-sm font-bold mb-3 text-blue-600">📎 Uploaded Documents</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  ${Object.entries(app.documents || {}).map(([docName, docData]) => `
+                    <div class="border rounded-lg p-3 bg-slate-50 dark:bg-slate-800/50">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold capitalize">${docName.replace(/([A-Z])/g, ' $1').trim()}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
+                      </div>
+                      ${docData.dataUrl ? `
+                        <div class="mt-2">
+                          ${docData.fileType === 'image' ? 
+                            `<img src="${docData.dataUrl}" class="w-full h-32 object-cover rounded-lg cursor-pointer preview-image" onclick="previewDocument('${docData.dataUrl}', '${docData.fileName}', 'image')">` : 
+                            `<div class="flex items-center gap-2 p-2 bg-white dark:bg-slate-700 rounded-lg">
+                              <span class="text-2xl">📄</span>
+                              <span class="text-sm truncate flex-1">${docData.fileName}</span>
+                              <button onclick="previewDocument('${docData.dataUrl}', '${docData.fileName}', 'pdf')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Preview</button>
+                            </div>`
+                          }
+                          <p class="text-xs text-slate-400 mt-1 truncate">${docData.fileName || ''} (${docData.fileSize || '0 KB'})</p>
+                        </div>
+                      ` : '<p class="text-xs text-slate-400 mt-2 italic">No file uploaded</p>'}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              
+              <!-- Activity Log -->
+              ${app.activityLog && app.activityLog.length ? `
+              <div class="border rounded-xl p-4">
+                <p class="text-sm font-bold mb-3 text-purple-600">📜 Activity Log</p>
+                <div class="space-y-1 max-h-32 overflow-y-auto">
+                  ${app.activityLog.map(log => `<div class="text-xs p-1"><span class="text-slate-400">${new Date(log.timestamp).toLocaleString()}</span> - ${log.action} <span class="text-slate-400">by ${log.by}</span></div>`).join('')}
+                </div>
+              </div>
+              ` : ''}
+            </div>
+            <div class="mt-6 flex justify-end">
+              <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.add('hidden');
+      modalContainer.innerHTML = '';
+    }
+
+    window.closeModal = closeModal;
+    window.showApplicationModal = showApplicationModal;
+
+    function render() {
+      const myApps = state.applications?.filter(a => a.customerEmail === currentUser.email) || [];
+      
+      document.getElementById('app').innerHTML = `
+        <div class="flex min-h-screen">
+          <aside class="w-64 fixed h-full bg-white dark:bg-slate-900 border-r shadow-lg">
+            <div class="h-16 flex items-center px-6 border-b">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">C</div>
+                <span class="font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Customer Portal</span>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white mb-6">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">${(currentUser.name || 'U').charAt(0)}</div>
+                <div>
+                  <h4 class="font-semibold">${currentUser.name}</h4>
+                  <p class="text-xs opacity-80">customer</p>
+                </div>
+              </div>
+              <nav class="space-y-1">
+                <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">📊 Dashboard</button>
+                <button onclick="showSection('apply')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">📝 Apply Loan</button>
+                <button onclick="showSection('applications')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">📋 My Applications</button>
+                <button onclick="showSection('profile')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">👤 Profile</button>
+                <button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all">🚪 Logout</button>
+              </nav>
+            </div>
+          </aside>
+          <main class="flex-1 ml-64 p-6"><div id="content" class="animate-fade-in"></div></main>
+        </div>
+      `;
+      showSection('dashboard');
+    }
+
+    function showSection(section) {
+      const content = document.getElementById('content');
+      const myApps = state.applications?.filter(a => a.customerEmail === currentUser.email) || [];
+      
+      if (section === 'dashboard') {
+        content.innerHTML = `
+          <div class="space-y-6">
+            <div class="p-8 rounded-3xl bg-gradient-to-r from-blue-900 to-indigo-900 text-white shadow-xl relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl"></div>
+              <h3 class="text-2xl font-black tracking-tight">Customer Dashboard</h3>
+              <p class="text-sm text-indigo-200 mt-2">Welcome, ${currentUser.name}</p>
+            </div>
+            <div class="grid grid-cols-3 gap-6">
+              <div class="p-6 bg-white dark:bg-slate-900 rounded-3xl border shadow-sm"><p class="text-slate-400">Applications</p><p class="text-3xl font-black">${myApps.length}</p></div>
+              <div class="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-3xl border shadow-sm"><p class="text-emerald-700">Approved</p><p class="text-3xl font-black text-emerald-700">${myApps.filter(a => a.status === 'Bank Approved').length}</p></div>
+              <div class="p-6 bg-amber-50 dark:bg-amber-950/20 rounded-3xl border shadow-sm"><p class="text-amber-700">Pending</p><p class="text-3xl font-black text-amber-700">${myApps.filter(a => a.status !== 'Bank Approved' && a.status !== 'Rejected').length}</p></div>
+            </div>
+            <button onclick="showSection('apply')" class="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition">📝 Apply for Loan</button>
+          </div>
+        `;
+      }
+      else if (section === 'apply') {
+        content.innerHTML = `
+          <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border p-8 shadow-xl">
+            <h4 class="text-xl font-black mb-6">Apply for Loan</h4>
+            <p class="text-sm text-amber-600 mb-4 bg-amber-50 p-3 rounded-lg">📌 After submission, admin will assign a bank or staff to process this application.</p>
+            
+            <form id="loanForm" class="space-y-6" enctype="multipart/form-data">
+              <!-- Personal Details Section -->
+              <div class="border-b pb-3">
+                <h5 class="font-bold text-lg text-blue-600 mb-3">👤 Personal Details</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input type="text" name="name" value="${currentUser.name}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                  <input type="email" name="email" value="${currentUser.email}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                  <input type="tel" name="mobile" value="${currentUser.mobile}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                  <input type="date" name="dob" placeholder="Date of Birth" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <select name="gender" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Gender</option><option>Male</option><option>Female</option><option>Other</option></select>
+                  <input type="text" name="pinCode" placeholder="PIN Code *" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800" required>
+                  <input type="text" name="pan" value="${currentUser.pan}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                  <input type="text" name="aadhaar" placeholder="Aadhaar Number" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                </div>
+              </div>
+
+              <!-- Employment Details Section -->
+              <div class="border-b pb-3">
+                <h5 class="font-bold text-lg text-blue-600 mb-3">💼 Employment Details</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <select name="employmentType" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Employment Type</option><option>Salaried</option><option>Self-Employed</option><option>Business</option><option>Professional</option></select>
+                  <input type="text" name="companyName" placeholder="Company / Business Name" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="number" name="workExperience" placeholder="Years of Experience" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="number" name="monthlySalary" value="${currentUser.salary}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                  <input type="number" name="existingEmi" placeholder="Existing EMI (₹)" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="number" name="cibil" value="${currentUser.cibil}" class="p-3 border rounded-xl bg-slate-100" readonly>
+                </div>
+              </div>
+
+              <!-- Loan Details Section -->
+              <div class="border-b pb-3">
+                <h5 class="font-bold text-lg text-blue-600 mb-3">🏦 Loan Details</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <select name="loanType" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Loan Type</option><option>Home Loan</option><option>Personal Loan</option><option>Business Loan</option><option>Education Loan</option><option>Car Loan</option></select>
+                  <input type="number" name="loanAmount" placeholder="Loan Amount Required (₹) *" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800" required>
+                  <select name="loanPurpose" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Loan Purpose</option><option>Home Purchase</option><option>Home Renovation</option><option>Debt Consolidation</option><option>Business Expansion</option><option>Education Fees</option></select>
+                  <select name="loanTenure" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Loan Tenure</option><option>12 months</option><option>24 months</option><option>36 months</option><option>48 months</option><option>60 months</option></select>
+                </div>
+              </div>
+
+              <!-- Document Upload Section -->
+              <div class="border-b pb-3">
+                <h5 class="font-bold text-lg text-blue-600 mb-3">📎 Document Upload (Required)</h5>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">PAN Card *</label><input type="file" name="panDoc" accept=".pdf,.jpg,.png" class="w-full text-sm" required><p class="text-xs text-slate-400 mt-1">PDF, JPG or PNG</p></div>
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">Aadhaar Card *</label><input type="file" name="aadhaarDoc" accept=".pdf,.jpg,.png" class="w-full text-sm" required><p class="text-xs text-slate-400 mt-1">PDF, JPG or PNG</p></div>
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">Passport Photo *</label><input type="file" name="photoDoc" accept=".jpg,.png" class="w-full text-sm" required><p class="text-xs text-slate-400 mt-1">JPG or PNG</p></div>
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">Salary Slip *</label><input type="file" name="salaryDoc" accept=".pdf,.jpg,.png" class="w-full text-sm" required><p class="text-xs text-slate-400 mt-1">Last 3 months salary slips</p></div>
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">Bank Statement</label><input type="file" name="bankDoc" accept=".pdf" class="w-full text-sm"><p class="text-xs text-slate-400 mt-1">Last 6 months (Optional)</p></div>
+                  <div class="border rounded-xl p-3 bg-slate-50 dark:bg-slate-800"><label class="text-sm font-semibold block mb-2">ITR / Form 16</label><input type="file" name="itrDoc" accept=".pdf" class="w-full text-sm"><p class="text-xs text-slate-400 mt-1">Last 2 years (Optional)</p></div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg"><label class="flex items-start gap-3 cursor-pointer"><input type="checkbox" name="declaration" required class="mt-1"><span class="text-sm">I hereby declare that all the information provided is true and accurate.</span></label></div>
+
+              <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">Submit Application</button>
+            </form>
+          </div>
+        `;
+        
+        document.getElementById('loanForm')?.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          showToast('Uploading documents...', 'info');
+          
+          const fd = new FormData(e.target);
+          const documents = {};
+          
+          // Process file uploads
+          const fileInputs = ['panDoc', 'aadhaarDoc', 'photoDoc', 'salaryDoc', 'bankDoc', 'itrDoc'];
+          for (const inputName of fileInputs) {
+            const file = fd.get(inputName);
+            const docKey = inputName.replace('Doc', '');
+            if (file && file.size > 0) {
+              try {
+                const base64Data = await fileToBase64(file);
+                const fileType = file.type.startsWith('image/') ? 'image' : 'pdf';
+                const fileSizeKB = (file.size / 1024).toFixed(1);
+                documents[docKey] = {
+                  status: 'Uploaded',
+                  fileName: file.name,
+                  fileType: fileType,
+                  dataUrl: base64Data,
+                  fileSize: fileSizeKB + ' KB',
+                  uploadDate: new Date().toISOString()
+                };
+              } catch (error) {
+                documents[docKey] = { status: 'Failed' };
+              }
+            } else {
+              documents[docKey] = { status: 'Pending' };
+            }
+          }
+          
+          const newApplication = {
+            id: 'APP-' + Date.now(),
+            customerId: currentUser.id,
+            customerName: fd.get('name'),
+            customerEmail: fd.get('email'),
+            customerMobile: fd.get('mobile'),
+            dob: fd.get('dob'),
+            gender: fd.get('gender'),
+            pinCode: fd.get('pinCode'),
+            pan: fd.get('pan'),
+            aadhaar: fd.get('aadhaar'),
+            employmentType: fd.get('employmentType'),
+            companyName: fd.get('companyName'),
+            workExperience: fd.get('workExperience'),
+            monthlySalary: parseInt(fd.get('salary')),
+            existingEmi: parseInt(fd.get('existingEmi') || 0),
+            cibilScore: parseInt(fd.get('cibil')),
+            loanType: fd.get('loanType'),
+            loanAmount: parseInt(fd.get('loanAmount')),
+            loanPurpose: fd.get('loanPurpose'),
+            loanTenure: fd.get('loanTenure')?.split(' ')[0] || '24',
+            status: 'Pending',
+            assignedStaff: null,
+            assignedStaffName: null,
+            assignedBank: null,
+            documents: documents,
+            submittedBy: 'Customer',
+            submittedDate: new Date().toISOString().split('T')[0],
+            activityLog: [{ action: 'Application Submitted', timestamp: new Date().toISOString(), by: currentUser.name }]
+          };
+          
+          if (!state.applications) state.applications = [];
+          state.applications.unshift(newApplication);
+          saveData();
+          
+          showToast('✅ Loan application submitted successfully! Admin will review it.', 'success');
+          showSection('applications');
+        });
+      }
+      else if (section === 'applications') {
+        if (myApps.length === 0) {
+          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12"><div class="text-6xl mb-4">📭</div><h4 class="text-lg font-black mb-2">No Applications Yet</h4><p class="text-slate-400">Click "Apply Loan" to submit your first application.</p><button onclick="showSection('apply')" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">📝 Apply Now</button></div>`;
+        } else {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-6">📋 My Applications (${myApps.length})</h4>
+              <div class="space-y-3">
+                ${myApps.map(app => `
+                  <div class="p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer bg-white dark:bg-slate-800" onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">
+                    <div class="flex justify-between items-start">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-2"><p class="font-bold text-blue-600">${app.id}</p><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></div>
+                        <p class="font-semibold text-slate-900 dark:text-white">${app.customerName}</p>
+                        <p class="text-sm text-slate-500">₹${app.loanAmount?.toLocaleString()} • ${app.loanPurpose || app.loanType}</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-xs"><div><span class="text-slate-400">Salary:</span> <span class="font-semibold">₹${app.monthlySalary?.toLocaleString()}</span></div><div><span class="text-slate-400">CIBIL:</span> <span class="font-semibold">${app.cibilScore}</span></div><div><span class="text-slate-400">Submitted:</span> <span class="font-semibold">${app.submittedDate}</span></div><div><span class="text-slate-400">Bank:</span> <span class="font-semibold ${app.assignedBank ? 'text-green-600' : 'text-amber-600'}">${app.assignedBank || 'Not assigned'}</span></div></div>
+                        <div class="flex gap-3 mt-2 text-xs"><span class="text-slate-400">Documents:</span>${Object.entries(app.documents || {}).map(([key, val]) => `<span class="${val.status === 'Uploaded' ? 'text-green-600' : 'text-red-500'} ml-2">${key.toUpperCase()} ${val.status === 'Uploaded' ? '✓' : '✗'}</span>`).join('')}</div>
+                      </div>
+                      <button class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50 transition" onclick="event.stopPropagation();showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">View Details</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+      else if (section === 'profile') {
+        content.innerHTML = `
+          <div class="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border p-8 shadow-xl">
+            <h4 class="text-xl font-black mb-6">My Profile</h4>
+            <div class="space-y-4">
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Full Name</p><p class="font-bold">${currentUser.name}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Email</p><p class="font-bold">${currentUser.email}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Mobile</p><p class="font-bold">${currentUser.mobile}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">PAN</p><p class="font-bold">${currentUser.pan}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Monthly Salary</p><p class="font-bold">₹${currentUser.salary?.toLocaleString()}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">CIBIL Score</p><p class="font-bold">${currentUser.cibil}</p></div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banker Dashboard | Loan Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { transition: background-color 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950">
+  <div id="app"></div>
+  <div id="modal-container" class="fixed inset-0 z-50 hidden"></div>
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+  <script>
+    const STORAGE_KEY = 'loan_management_data';
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    let currentUser = state.currentUser || {};
+
+    // Initialize banks if not exists
+    if (!state.banks) {
+      state.banks = [
+        { id: 'b1', name: 'Federal Trust Bank', minSalary: 25000, minCibil: 700, maxLoan: 5000000, interestRate: 10.5, status: 'Active', bankerEmail: 'amit@federaltrust.com' },
+        { id: 'b2', name: 'National Alliance Bank', minSalary: 45000, minCibil: 750, maxLoan: 7500000, interestRate: 10.75, status: 'Active', bankerEmail: 'priya@nationalalliance.com' },
+        { id: 'b3', name: 'Apex Credit Union', minSalary: 15000, minCibil: 650, maxLoan: 3000000, interestRate: 11.5, status: 'Active', bankerEmail: 'rahul@apexcu.com' },
+        { id: 'b4', name: 'Metropolitan Bank', minSalary: 35000, minCibil: 720, maxLoan: 10000000, interestRate: 9.75, status: 'Active', bankerEmail: 'neha@metropolitan.com' }
+      ];
+    }
+
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      let classes = 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/80';
+      if (type === 'error') classes = 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/80';
+      else if (type === 'warning') classes = 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/80';
+      toast.className = `p-4 rounded-xl shadow-lg border animate-slide-in ${classes}`;
+      toast.innerHTML = `<div class="text-xs font-semibold">${message}</div><button onclick="this.parentElement.remove()" class="ml-4 text-xs opacity-70">✕</button>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    function logout() { 
+      state.currentUser = null;
+      saveData();
+      window.location.href = 'index.html'; 
+    }
+
+    // Show application details modal
+    function showApplicationModal(app) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">📋 Application Details</h3>
+              <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600 transition">×</button>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Application ID</p><p class="font-bold text-blue-600">${app.id}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Status</p><p class="font-bold"><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}">${app.status}</span></p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Customer Name</p><p class="font-bold">${app.customerName}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Email</p><p class="font-bold">${app.customerEmail}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Mobile</p><p class="font-bold">${app.customerMobile}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Loan Amount</p><p class="font-bold text-green-600">₹${app.loanAmount?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Loan Purpose</p><p class="font-bold">${app.loanPurpose}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Monthly Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">CIBIL Score</p><p class="font-bold">${app.cibilScore}</p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Submitted Date</p><p class="font-bold">${app.submittedDate}</p></div>
+              </div>
+              ${app.staffRemarks ? `<div class="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-xl"><p class="text-xs text-slate-400">Staff Remarks</p><p class="font-bold">${app.staffRemarks}</p></div>` : ''}
+            </div>
+            <div class="mt-6 flex justify-end">
+              <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Close</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.add('hidden');
+      modalContainer.innerHTML = '';
+    }
+
+    // Approve or reject application
+    function updateApplicationStatus(appId, status, remarks) {
+      const app = state.applications.find(a => a.id === appId);
+      if (app) {
+        app.status = status === 'Approved' ? 'Bank Approved' : 'Rejected';
+        app.bankerRemarks = remarks;
+        app.bankerName = currentUser.name;
+        app.decisionDate = new Date().toISOString().split('T')[0];
+        saveData();
+        showToast(`✅ Application ${appId} has been ${status}!`, status === 'Approved' ? 'success' : 'warning');
+        render();
+      }
+    }
+
+    window.closeModal = closeModal;
+    window.showApplicationModal = showApplicationModal;
+    window.updateApplicationStatus = updateApplicationStatus;
+
+    // Get applications assigned to this banker's bank only
+    function getMyBankApplications() {
+      // Only show applications that are assigned to this banker's bank
+      return state.applications?.filter(app => 
+        app.assignedBank === currentUser.bankName && 
+        app.status !== 'Bank Approved' && 
+        app.status !== 'Rejected'
+      ) || [];
+    }
+
+    function getMyApprovedApplications() {
+      return state.applications?.filter(app => 
+        app.assignedBank === currentUser.bankName && 
+        app.status === 'Bank Approved'
+      ) || [];
+    }
+
+    function getMyRejectedApplications() {
+      return state.applications?.filter(app => 
+        app.assignedBank === currentUser.bankName && 
+        app.status === 'Rejected'
+      ) || [];
+    }
+
+    function render() {
+      const myApps = getMyBankApplications();
+      const approvedApps = getMyApprovedApplications();
+      const rejectedApps = getMyRejectedApplications();
+      
+      document.getElementById('app').innerHTML = `
+        <div class="flex min-h-screen">
+          <aside class="w-64 fixed h-full bg-white dark:bg-slate-900 border-r shadow-lg">
+            <div class="h-16 flex items-center px-6 border-b">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white font-bold">B</div>
+                <span class="font-bold text-lg bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">${currentUser.bankName}</span>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 text-white mb-6">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">${(currentUser.name || 'B').charAt(0)}</div>
+                <div>
+                  <h4 class="font-semibold">${currentUser.name}</h4>
+                  <p class="text-xs opacity-80">${currentUser.bankName}</p>
+                </div>
+              </div>
+              <nav class="space-y-1">
+                <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">📊 Dashboard</button>
+                <button onclick="showSection('pending')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">📋 Pending Applications</button>
+                <button onclick="showSection('approved')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">✅ Approved</button>
+                <button onclick="showSection('rejected')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">❌ Rejected</button>
+                <button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all">🚪 Logout</button>
+              </nav>
+            </div>
+          </aside>
+          <main class="flex-1 ml-64 p-6"><div id="content" class="animate-fade-in"></div></main>
+        </div>
+      `;
+      showSection('dashboard');
+    }
+
+    function showSection(section) {
+      const content = document.getElementById('content');
+      const pendingApps = getMyBankApplications();
+      const approvedApps = getMyApprovedApplications();
+      const rejectedApps = getMyRejectedApplications();
+      
+      if (section === 'dashboard') {
+        content.innerHTML = `
+          <div class="space-y-6">
+            <div class="p-8 rounded-3xl bg-gradient-to-r from-teal-900 to-emerald-900 text-white shadow-xl relative overflow-hidden">
+              <div class="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl"></div>
+              <h3 class="text-2xl font-black tracking-tight">${currentUser.bankName} - Banker Portal</h3>
+              <p class="text-sm text-teal-200 mt-2">Welcome, ${currentUser.name}</p>
+              <p class="text-xs text-teal-200/70 mt-1">You can only view applications assigned to ${currentUser.bankName}</p>
+            </div>
+            <div class="grid grid-cols-3 gap-6">
+              <div class="p-6 bg-white dark:bg-slate-900 rounded-3xl border shadow-sm">
+                <p class="text-slate-400">Pending Applications</p>
+                <p class="text-3xl font-black text-amber-600">${pendingApps.length}</p>
+              </div>
+              <div class="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-3xl border shadow-sm">
+                <p class="text-emerald-700">Approved</p>
+                <p class="text-3xl font-black text-emerald-700">${approvedApps.length}</p>
+              </div>
+              <div class="p-6 bg-rose-50 dark:bg-rose-950/20 rounded-3xl border shadow-sm">
+                <p class="text-rose-700">Rejected</p>
+                <p class="text-3xl font-black text-rose-700">${rejectedApps.length}</p>
+              </div>
+            </div>
+            ${pendingApps.length > 0 ? `<button onclick="showSection('pending')" class="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold shadow-lg shadow-teal-600/20 hover:bg-teal-700 transition">📋 Review Pending Applications →</button>` : ''}
+          </div>
+        `;
+      }
+      else if (section === 'pending') {
+        if (pendingApps.length === 0) {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12">
+              <div class="text-6xl mb-4">📭</div>
+              <h4 class="text-lg font-black mb-2">No Pending Applications</h4>
+              <p class="text-slate-400">No applications have been assigned to ${currentUser.bankName} yet.</p>
+            </div>
+          `;
+        } else {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-6">📋 Pending Applications for ${currentUser.bankName} (${pendingApps.length})</h4>
+              <div class="space-y-4">
+                ${pendingApps.map(app => `
+                  <div class="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30">
+                    <div class="flex justify-between items-start mb-3">
+                      <div>
+                        <h5 class="font-bold text-lg">${app.customerName}</h5>
+                        <p class="text-sm text-slate-500">ID: ${app.id} • Submitted: ${app.submittedDate} • By: ${app.submittedBy}</p>
+                      </div>
+                      <span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">Pending Review</span>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-sm">
+                      <div><p class="text-slate-400">Loan Amount</p><p class="font-bold">₹${app.loanAmount?.toLocaleString()}</p></div>
+                      <div><p class="text-slate-400">Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div>
+                      <div><p class="text-slate-400">CIBIL</p><p class="font-bold">${app.cibilScore}</p></div>
+                      <div><p class="text-slate-400">Loan Purpose</p><p class="font-bold">${app.loanPurpose}</p></div>
+                    </div>
+                    <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                      <p class="text-sm font-semibold text-blue-700 mb-2">📝 Bank Eligibility Check:</p>
+                      <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>✓ Min Salary Required: ₹${state.banks.find(b => b.name === currentUser.bankName)?.minSalary?.toLocaleString()}</div>
+                        <div>✓ Applicant Salary: ₹${app.monthlySalary?.toLocaleString()} ${app.monthlySalary >= (state.banks.find(b => b.name === currentUser.bankName)?.minSalary || 0) ? '✅' : '❌'}</div>
+                        <div>✓ Min CIBIL Required: ${state.banks.find(b => b.name === currentUser.bankName)?.minCibil}+</div>
+                        <div>✓ Applicant CIBIL: ${app.cibilScore} ${app.cibilScore >= (state.banks.find(b => b.name === currentUser.bankName)?.minCibil || 0) ? '✅' : '❌'}</div>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3 items-center justify-between">
+                      <div class="flex gap-2">
+                        <select id="decision-${app.id}" class="px-3 py-2 border rounded-lg text-sm bg-white">
+                          <option value="Approved">✅ Approve Loan</option>
+                          <option value="Rejected">❌ Reject Loan</option>
+                        </select>
+                        <input type="text" id="remarks-${app.id}" placeholder="Remarks (optional)" class="px-3 py-2 border rounded-lg text-sm w-48">
+                        <button onclick="updateApplicationStatus('${app.id}', document.getElementById('decision-${app.id}').value, document.getElementById('remarks-${app.id}').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition">Submit Decision</button>
+                      </div>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm">View Full Details</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+      else if (section === 'approved') {
+        if (approvedApps.length === 0) {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12">
+              <div class="text-6xl mb-4">✅</div>
+              <h4 class="text-lg font-black mb-2">No Approved Applications</h4>
+              <p class="text-slate-400">You haven't approved any applications yet.</p>
+            </div>
+          `;
+        } else {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-6 text-emerald-700">✅ Approved Applications (${approvedApps.length})</h4>
+              <div class="space-y-3">
+                ${approvedApps.map(app => `
+                  <div class="p-4 border rounded-xl bg-emerald-50/30">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <p class="font-bold text-blue-600">${app.id}</p>
+                        <p class="font-semibold">${app.customerName}</p>
+                        <p class="text-sm">₹${app.loanAmount?.toLocaleString()} • ${app.loanPurpose}</p>
+                        <p class="text-xs text-green-600 mt-1">Approved on: ${app.decisionDate}</p>
+                        ${app.bankerRemarks ? `<p class="text-xs text-slate-500 mt-1">Remarks: ${app.bankerRemarks}</p>` : ''}
+                      </div>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+      else if (section === 'rejected') {
+        if (rejectedApps.length === 0) {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12">
+              <div class="text-6xl mb-4">❌</div>
+              <h4 class="text-lg font-black mb-2">No Rejected Applications</h4>
+              <p class="text-slate-400">You haven't rejected any applications yet.</p>
+            </div>
+          `;
+        } else {
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-6 text-rose-700">❌ Rejected Applications (${rejectedApps.length})</h4>
+              <div class="space-y-3">
+                ${rejectedApps.map(app => `
+                  <div class="p-4 border rounded-xl bg-rose-50/30">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <p class="font-bold text-blue-600">${app.id}</p>
+                        <p class="font-semibold">${app.customerName}</p>
+                        <p class="text-sm">₹${app.loanAmount?.toLocaleString()} • ${app.loanPurpose}</p>
+                        <p class="text-xs text-rose-600 mt-1">Rejected on: ${app.decisionDate}</p>
+                        ${app.bankerRemarks ? `<p class="text-xs text-slate-500 mt-1">Remarks: ${app.bankerRemarks}</p>` : ''}
+                      </div>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

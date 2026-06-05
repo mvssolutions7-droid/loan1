@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Dashboard | Loan Management System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { transition: background-color 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .animate-fade-in { animation: fadeIn 0.25s ease-out forwards; }
+    .animate-slide-in { animation: slideIn 0.3s ease-out forwards; }
+    .preview-image { cursor: pointer; transition: transform 0.2s; }
+    .preview-image:hover { transform: scale(1.02); }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950">
+  <div id="app"></div>
+  <div id="modal-container" class="fixed inset-0 z-50 hidden"></div>
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
+  <script>
+    const STORAGE_KEY = 'loan_management_data';
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    let currentUser = state.currentUser || {};
+
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function showToast(message, type = 'success') { alert(message); }
+    function logout() { state.currentUser = null; saveData(); window.location.href = 'index.html'; }
+
+    // Preview document function
+    function previewDocument(dataUrl, fileName, fileType) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" onclick="closePreviewModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-3 pb-2 border-b">
+              <h4 class="font-bold">📄 Document Preview: ${fileName}</h4>
+              <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            <div class="flex justify-center items-center min-h-[300px]">
+              ${fileType === 'image' ? 
+                `<img src="${dataUrl}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
+                `<iframe src="${dataUrl}" class="w-full h-[70vh] border-0 rounded"></iframe>`
+              }
+            </div>
+            <div class="mt-3 flex justify-end">
+              <button onclick="window.open('${dataUrl}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
+            </div>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+    }
+
+    function closePreviewModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.add('hidden');
+      modalContainer.innerHTML = '';
+    }
+
+    window.previewDocument = previewDocument;
+    window.closePreviewModal = closePreviewModal;
+
+    function showApplicationModal(app) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-3 sticky top-0 bg-white dark:bg-slate-900">
+              <h3 class="text-xl font-bold">📋 Application Details</h3>
+              <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600">×</button>
+            </div>
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">ID</p><p class="font-bold text-blue-600">${app.id}</p></div>
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">Status</p><p class="font-bold">${app.status}</p></div>
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">Customer</p><p class="font-bold">${app.customerName}</p></div>
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">Loan Amount</p><p class="font-bold">₹${app.loanAmount?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div>
+                <div class="p-3 bg-slate-50 rounded-xl"><p class="text-xs text-slate-400">CIBIL</p><p class="font-bold">${app.cibilScore}</p></div>
+              </div>
+              
+              <div class="border rounded-xl p-4">
+                <p class="text-sm font-bold mb-3 text-amber-600">📎 Uploaded Documents</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  ${Object.entries(app.documents || {}).map(([docName, docData]) => `
+                    <div class="border rounded-lg p-3 bg-slate-50">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-semibold capitalize">${docName.replace(/([A-Z])/g, ' $1').trim()}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
+                      </div>
+                      ${docData.dataUrl ? `
+                        <div class="mt-2">
+                          ${docData.fileType === 'image' ? 
+                            `<img src="${docData.dataUrl}" class="w-full h-32 object-cover rounded-lg cursor-pointer" onclick="previewDocument('${docData.dataUrl}', '${docData.fileName}', 'image')">` : 
+                            `<div class="flex items-center gap-2 p-2 bg-white rounded-lg"><span class="text-2xl">📄</span><span class="text-sm truncate flex-1">${docData.fileName}</span><button onclick="previewDocument('${docData.dataUrl}', '${docData.fileName}', 'pdf')" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">Preview</button></div>`
+                          }
+                          <p class="text-xs text-slate-400 mt-1">${docData.fileName || ''}</p>
+                        </div>
+                      ` : '<p class="text-xs text-slate-400 mt-2 italic">Not uploaded</p>'}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end"><button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold">Close</button></div>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.add('hidden');
+      modalContainer.innerHTML = '';
+    }
+
+    window.closeModal = closeModal;
+    window.showApplicationModal = showApplicationModal;
+
+    function sendToBank(appId, bankName) {
+      if (!bankName) { alert('Please select a bank'); return; }
+      const app = state.applications.find(a => a.id === appId);
+      if (app) {
+        app.assignedBank = bankName;
+        app.status = 'Sent to Bank';
+        if (!app.activityLog) app.activityLog = [];
+        app.activityLog.push({ action: `Forwarded to bank: ${bankName} after verification`, timestamp: new Date().toISOString(), by: currentUser.name });
+        saveData();
+        alert(`✅ Application sent to ${bankName} for final approval!`);
+        render();
+      }
+    }
+
+    window.sendToBank = sendToBank;
+
+    function getMyAssignedApplications() {
+      return state.applications?.filter(app => app.assignedStaff === currentUser.id && app.status === 'Assigned to Staff') || [];
+    }
+
+    function calculateEligibleBanks(salary, cibil, loanAmount) {
+      return state.banks.filter(bank => 
+        bank.minSalary <= salary && 
+        bank.minCibil <= cibil && 
+        bank.maxLoan >= loanAmount &&
+        bank.status === 'Active'
+      );
+    }
+
+    function render() {
+      const myApps = getMyAssignedApplications();
+      
+      document.getElementById('app').innerHTML = `
+        <div class="flex min-h-screen">
+          <aside class="w-64 fixed h-full bg-white dark:bg-slate-900 border-r shadow-lg">
+            <div class="h-16 flex items-center px-6 border-b"><span class="font-bold text-xl bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">Staff Portal</span></div>
+            <div class="p-4"><div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white mb-6"><div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">${(currentUser.name || 'S').charAt(0)}</div><div><h4 class="font-semibold">${currentUser.name}</h4><p class="text-xs opacity-80">${currentUser.role}</p></div></div>
+            <nav class="space-y-1"><button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📊 Dashboard</button><button onclick="showSection('applications')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📋 My Assignments</button><button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 transition-all">🚪 Logout</button></nav></div>
+          </aside>
+          <main class="flex-1 ml-64 p-6"><div id="content" class="animate-fade-in"></div></main>
+        </div>
+      `;
+      showSection('dashboard');
+    }
+
+    function showSection(section) {
+      const content = document.getElementById('content');
+      const myApps = getMyAssignedApplications();
+      
+      if (section === 'dashboard') {
+        content.innerHTML = `<div class="space-y-6"><div class="p-8 rounded-3xl bg-gradient-to-r from-amber-900 to-orange-900 text-white shadow-xl"><h3 class="text-2xl font-black">Staff Dashboard</h3><p class="text-sm">Welcome, ${currentUser.name}</p><p class="text-xs">Role: ${currentUser.role} | PIN: ${currentUser.pinCodes?.join(', ')}</p></div><div class="grid grid-cols-2 gap-6"><div class="p-6 bg-white rounded-3xl border"><p class="text-slate-400">Assigned to Me</p><p class="text-3xl font-black">${myApps.length}</p></div><div class="p-6 bg-amber-50 rounded-3xl border"><p class="text-amber-700">Pending Verification</p><p class="text-3xl font-black text-amber-700">${myApps.length}</p></div></div><button onclick="showSection('applications')" class="px-6 py-3 bg-amber-600 text-white rounded-xl font-bold">📋 View Assigned →</button></div>`;
+      }
+      else if (section === 'applications') {
+        if (myApps.length === 0) {
+          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center py-12"><div class="text-6xl mb-4">📭</div><h4 class="text-lg font-black mb-2">No Assigned Applications</h4><p class="text-slate-400">Admin hasn't assigned any applications to you yet.</p></div>`;
+        } else {
+          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">📋 Applications Assigned to Me (${myApps.length})</h4><div class="space-y-4">${myApps.map(app => {
+            const eligibleBanks = calculateEligibleBanks(app.monthlySalary, app.cibilScore, app.loanAmount);
+            return `
+              <div class="p-5 border rounded-xl bg-white">
+                <div class="flex justify-between items-start mb-3"><div><h5 class="font-bold text-lg">${app.customerName}</h5><p class="text-sm text-slate-500">ID: ${app.id} • Submitted: ${app.submittedDate}</p></div><span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">Pending Verification</span></div>
+                <div class="grid grid-cols-4 gap-3 mb-4 text-sm"><div><p class="text-slate-400">Loan</p><p class="font-bold">₹${app.loanAmount?.toLocaleString()}</p></div><div><p class="text-slate-400">Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div><div><p class="text-slate-400">CIBIL</p><p class="font-bold">${app.cibilScore}</p></div><div><p class="text-slate-400">Documents</p><p class="font-bold">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length}</p></div></div>
+                
+                <!-- Bank Eligibility Policy Section -->
+                <div class="mb-4 p-3 bg-green-50 rounded-lg">
+                  <p class="text-sm font-bold text-green-700 mb-2">🏦 Bank Eligibility Policy (Based on Customer Profile)</p>
+                  <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                    <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Customer Salary:</span><span class="font-bold">₹${app.monthlySalary?.toLocaleString()}/month</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Customer CIBIL:</span><span class="font-bold">${app.cibilScore}</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Loan Amount:</span><span class="font-bold">₹${app.loanAmount?.toLocaleString()}</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">FOIR:</span><span class="font-bold">${app.foir || 'Calculated'}%</span></div>
+                  </div>
+                </div>
+                
+                <!-- Eligible Banks List with Details -->
+                <div class="mb-4">
+                  <p class="text-sm font-bold text-blue-700 mb-2">✅ Eligible Banks (${eligibleBanks.length} banks match):</p>
+                  <div class="space-y-2 max-h-48 overflow-y-auto">
+                    ${eligibleBanks.map(bank => `
+                      <div class="p-2 border rounded-lg bg-white flex justify-between items-center">
+                        <div>
+                          <p class="font-semibold text-sm">${bank.name}</p>
+                          <div class="flex gap-3 text-xs text-slate-500">
+                            <span>Min Salary: ₹${bank.minSalary.toLocaleString()}</span>
+                            <span>Min CIBIL: ${bank.minCibil}</span>
+                            <span>Interest: ${bank.interestRate}%</span>
+                          </div>
+                        </div>
+                        <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Eligible ✓</span>
+                      </div>
+                    `).join('')}
+                    ${eligibleBanks.length === 0 ? '<div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">⚠️ No banks match the eligibility criteria</div>' : ''}
+                  </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-3 items-center justify-between">
+                  <div class="flex gap-2"><select id="bank-${app.id}" class="px-3 py-2 border rounded-lg text-sm"><option value="">Select Bank to Send...</option>${eligibleBanks.map(bank => `<option value="${bank.name}">${bank.name}</option>`).join('')}</select><button onclick="sendToBank('${app.id}', document.getElementById('bank-${app.id}').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">📧 Send to Bank</button></div>
+                  <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-slate-600 text-white rounded-lg text-sm">View Details & Documents</button>
+                </div>
+              </div>
+            `;
+          }).join('')}</div></div>`;
+        }
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
