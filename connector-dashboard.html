@@ -18,30 +18,11 @@
 <body class="bg-slate-50 dark:bg-slate-950">
   <div id="app"></div>
   <div id="modal-container" class="fixed inset-0 z-50 hidden"></div>
+  <div id="preview-modal" class="fixed inset-0 z-50 hidden bg-black/80 flex items-center justify-center"></div>
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
   <script>
     const STORAGE_KEY = 'loan_management_data';
-    
-    function getInitialData() {
-      const existing = localStorage.getItem(STORAGE_KEY);
-      if (existing) return JSON.parse(existing);
-      return {
-        banks: [
-          { id: 'b1', name: 'Federal Trust Bank', minSalary: 25000, minCibil: 700, maxLoan: 5000000, interestRate: 10.5, status: 'Active' },
-          { id: 'b2', name: 'National Alliance Bank', minSalary: 45000, minCibil: 750, maxLoan: 7500000, interestRate: 10.75, status: 'Active' },
-          { id: 'b3', name: 'Apex Credit Union', minSalary: 15000, minCibil: 650, maxLoan: 3000000, interestRate: 11.5, status: 'Active' },
-          { id: 'b4', name: 'Metropolitan Bank', minSalary: 35000, minCibil: 720, maxLoan: 10000000, interestRate: 9.75, status: 'Active' }
-        ],
-        staff: [],
-        bankers: [],
-        connectors: [],
-        customers: [],
-        applications: [],
-        currentUser: null
-      };
-    }
-
-    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || getInitialData();
+    let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     let currentUser = state.currentUser || {};
 
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
@@ -52,6 +33,7 @@
       let classes = 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/80';
       if (type === 'error') classes = 'bg-rose-50 border-rose-200 text-rose-900 dark:bg-rose-950/80';
       else if (type === 'warning') classes = 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/80';
+      else if (type === 'info') classes = 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/80';
       toast.className = `p-4 rounded-xl shadow-lg border animate-slide-in ${classes}`;
       toast.innerHTML = `<div class="text-xs font-semibold">${message}</div><button onclick="this.parentElement.remove()" class="ml-4 text-xs opacity-70">✕</button>`;
       container.appendChild(toast);
@@ -86,60 +68,56 @@
       const fileType = file.type;
       const url = URL.createObjectURL(file);
       
-      const modalContainer = document.getElementById('modal-container');
-      modalContainer.innerHTML = `
-        <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" onclick="closePreviewModal(event)">
-          <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b">
-              <h4 class="font-bold">📄 Preview: ${file.name}</h4>
-              <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
-            </div>
-            <div class="flex justify-center items-center min-h-[300px]">
-              ${fileType.startsWith('image/') ? 
-                `<img src="${url}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
-                `<iframe src="${url}" class="w-full h-[70vh] border-0 rounded"></iframe>`
-              }
-            </div>
-            <div class="mt-3 flex justify-end">
-              <button onclick="window.open('${url}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
-              <button onclick="closePreviewModal()" class="ml-2 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">Close</button>
-            </div>
+      const previewModal = document.getElementById('preview-modal');
+      previewModal.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h4 class="font-bold">📄 Document Preview: ${file.name}</h4>
+            <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+          </div>
+          <div class="flex justify-center items-center min-h-[300px]">
+            ${fileType.startsWith('image/') ? 
+              `<img src="${url}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
+              `<iframe src="${url}" class="w-full h-[70vh] border-0 rounded"></iframe>`
+            }
+          </div>
+          <div class="mt-3 flex justify-end gap-2">
+            <button onclick="window.open('${url}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
+            <button onclick="closePreviewModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">Close</button>
           </div>
         </div>
       `;
-      modalContainer.classList.remove('hidden');
+      previewModal.classList.remove('hidden');
     }
 
     // Preview stored document from Base64
     function previewStoredDocument(dataUrl, fileName, fileType) {
-      const modalContainer = document.getElementById('modal-container');
-      modalContainer.innerHTML = `
-        <div class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in" onclick="closePreviewModal(event)">
-          <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
-            <div class="flex justify-between items-center mb-3 pb-2 border-b">
-              <h4 class="font-bold">📄 Document Preview: ${fileName}</h4>
-              <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
-            </div>
-            <div class="flex justify-center items-center min-h-[300px]">
-              ${fileType === 'image' ? 
-                `<img src="${dataUrl}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
-                `<iframe src="${dataUrl}" class="w-full h-[70vh] border-0 rounded"></iframe>`
-              }
-            </div>
-            <div class="mt-3 flex justify-end">
-              <button onclick="window.open('${dataUrl}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
-              <button onclick="closePreviewModal()" class="ml-2 px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">Close</button>
-            </div>
+      const previewModal = document.getElementById('preview-modal');
+      previewModal.innerHTML = `
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+          <div class="flex justify-between items-center mb-3 pb-2 border-b">
+            <h4 class="font-bold">📄 Document Preview: ${fileName}</h4>
+            <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
+          </div>
+          <div class="flex justify-center items-center min-h-[300px]">
+            ${fileType === 'image' ? 
+              `<img src="${dataUrl}" class="max-w-full max-h-[70vh] object-contain rounded">` : 
+              `<iframe src="${dataUrl}" class="w-full h-[70vh] border-0 rounded"></iframe>`
+            }
+          </div>
+          <div class="mt-3 flex justify-end gap-2">
+            <button onclick="window.open('${dataUrl}')" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Open in New Tab</button>
+            <button onclick="closePreviewModal()" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">Close</button>
           </div>
         </div>
       `;
-      modalContainer.classList.remove('hidden');
+      previewModal.classList.remove('hidden');
     }
 
     function closePreviewModal() {
-      const modalContainer = document.getElementById('modal-container');
-      modalContainer.classList.add('hidden');
-      modalContainer.innerHTML = '';
+      const previewModal = document.getElementById('preview-modal');
+      previewModal.classList.add('hidden');
+      previewModal.innerHTML = '';
     }
 
     window.previewUploadedFile = previewUploadedFile;
@@ -179,7 +157,7 @@
                     <div class="border rounded-lg p-3 bg-slate-50 dark:bg-slate-800/50">
                       <div class="flex items-center justify-between mb-2">
                         <span class="text-sm font-semibold capitalize">${docName.replace(/([A-Z])/g, ' $1').trim()}</span>
-                        <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : docData.status === 'Uploaded (No Preview)' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
                       </div>
                       ${docData.dataUrl ? `
                         <div class="mt-2">
@@ -193,7 +171,7 @@
                           }
                           <p class="text-xs text-slate-400 mt-1 truncate">${docData.fileName || ''} (${docData.fileSize || '0 KB'})</p>
                         </div>
-                      ` : '<p class="text-xs text-slate-400 mt-2 italic">No file uploaded</p>'}
+                      ` : docData.fileName ? `<p class="text-xs text-slate-500 mt-2">${docData.fileName} (${docData.fileSize})<br><span class="text-amber-600">⚠️ File too large for preview</span></p>` : '<p class="text-xs text-slate-400 mt-2 italic">No file uploaded</p>'}
                     </div>
                   `).join('') : '<p class="text-center text-slate-400 py-4">No documents uploaded</p>'}
                 </div>
@@ -242,7 +220,10 @@
             <div class="p-4">
               <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 text-white mb-6">
                 <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold text-lg">${(currentUser.name || 'C').charAt(0)}</div>
-                <div><h4 class="font-semibold">${currentUser.name}</h4><p class="text-xs opacity-80">${currentUser.company || 'Connector'}</p></div>
+                <div>
+                  <h4 class="font-semibold">${currentUser.name}</h4>
+                  <p class="text-xs opacity-80">${currentUser.company || 'Connector'}</p>
+                </div>
               </div>
               <nav class="space-y-1">
                 <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📊 Dashboard</button>
@@ -287,6 +268,7 @@
           <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border p-8 shadow-xl">
             <h4 class="text-xl font-black mb-6">Add Customer Application</h4>
             <p class="text-sm text-amber-600 mb-4 bg-amber-50 p-3 rounded-lg">📌 After submission, admin will assign a bank or staff to process this application.</p>
+            <p class="text-xs text-slate-500 mb-4 bg-blue-50 p-2 rounded-lg">⚠️ For preview to work, please upload files smaller than 2MB. Larger files will show only metadata.</p>
             
             <form id="customerForm" class="space-y-6" enctype="multipart/form-data">
               <!-- Personal Details Section -->
@@ -407,7 +389,10 @@
             loanPurpose: fd.get('loanPurpose'),
             loanTenure: fd.get('loanTenure')?.split(' ')[0] || '24',
             status: 'Pending',
+            assignedStaff: null,
+            assignedStaffName: null,
             assignedBank: null,
+            bankResponses: [],
             documents: documents,
             submittedBy: 'Connector',
             connectorId: currentUser.id,
@@ -419,7 +404,7 @@
           state.applications.unshift(newApplication);
           saveData();
           
-          showToast('✅ Customer application submitted successfully!', 'success');
+          showToast('✅ Customer application submitted successfully! Documents uploaded.', 'success');
           showSection('leads');
         });
       }
