@@ -103,9 +103,6 @@
       if (role === 'admin' && email === 'admin@bank.com') {
         user = { id: 'ad1', name: 'Admin User', email, role: 'admin' };
       }
-      else if (role === 'superadmin' && email === 'superadmin@bank.com') {
-        user = { id: 'sa1', name: 'Super Admin', email, role: 'superadmin' };
-      }
       else if (role === 'staff') {
         user = state.staff.find(s => s.email === email && s.password === password);
         if (user && user.status !== 'Active') {
@@ -261,7 +258,7 @@
               <nav class="hidden md:flex gap-8 text-sm font-semibold">
                 <a href="#features" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
                 <a href="#workflow" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Workflow</a>
-                <a href="#roles" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">7 Roles</a>
+                <a href="#roles" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">6 Roles</a>
                 <a href="#stats" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Stats</a>
               </nav>
               <button onclick="showLoginModal()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:scale-105 transition-all duration-300">Portal Login</button>
@@ -307,7 +304,7 @@
               <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
                 <div class="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4"><span class="text-3xl">🔐</span></div>
                 <h3 class="font-bold text-lg mb-2">Role-Based Access</h3>
-                <p class="text-sm text-slate-500">7 distinct roles with granular permissions and PIN-based staff access.</p>
+                <p class="text-sm text-slate-500">6 distinct roles with granular permissions and PIN-based staff access.</p>
               </div>
               <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
                 <div class="w-14 h-14 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4"><span class="text-3xl">📄</span></div>
@@ -358,21 +355,20 @@
             </div>
           </section>
 
-          <!-- Roles Section -->
+          <!-- Roles Section - 6 Roles (Super Admin Removed) -->
           <section id="roles" class="max-w-7xl mx-auto px-6 py-16">
             <div class="text-center mb-12">
-              <span class="px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold">7 Role Portals</span>
+              <span class="px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold">6 Role Portals</span>
               <h2 class="text-3xl md:text-4xl font-black mt-4">Choose Your Workspace</h2>
               <p class="text-slate-500 max-w-2xl mx-auto mt-2">Different access levels for different stakeholders</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               ${[
                 { id: 'customer', title: 'Customer', icon: '👤', desc: 'Apply for loans, upload documents, track application status in real-time.', badge: 'Easy Apply', color: 'blue', gradient: 'from-blue-500 to-indigo-600' },
                 { id: 'connector', title: 'Connector/DSA', icon: '🤝', desc: 'Submit customer applications, manage leads, earn commissions on approvals.', badge: 'High Commission', color: 'purple', gradient: 'from-purple-500 to-pink-600' },
                 { id: 'staff', title: 'Staff', icon: '👔', desc: 'PIN-based access, verify documents, check eligibility, forward to banks.', badge: 'PIN Access', color: 'amber', gradient: 'from-amber-500 to-orange-600' },
                 { id: 'banker', title: 'Banker', icon: '🏦', desc: 'View only your bank\'s applications, approve/reject with secure access.', badge: 'Bank Specific', color: 'teal', gradient: 'from-teal-500 to-emerald-600' },
-                { id: 'admin', title: 'Admin', icon: '⚙️', desc: 'Full system control, assign to staff or banks, manage all policies.', badge: 'Super Control', color: 'red', gradient: 'from-red-500 to-rose-600' },
-                { id: 'superadmin', title: 'Super Admin', icon: '👑', desc: 'Manage companies, admins, subscriptions, API settings, global reports.', badge: 'Enterprise', color: 'indigo', gradient: 'from-indigo-500 to-purple-600' }
+                { id: 'admin', title: 'Admin', icon: '⚙️', desc: 'Full system control, assign to staff or banks, manage all policies.', badge: 'Super Control', color: 'red', gradient: 'from-red-500 to-rose-600' }
               ].map(role => `
                 <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover backdrop-blur-sm">
                   <div class="flex items-center justify-between mb-4">
@@ -422,7 +418,7 @@
                 <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">B</div>
                 <span class="text-white font-bold">Bank Policy Update</span>
               </div>
-              <p class="text-xs">© 2026 Secured Bank Policy Hub | 7 Role Workflow | PIN Based Staff Access | Bank-wise Email/WhatsApp</p>
+              <p class="text-xs">© 2026 Secured Bank Policy Hub | 6 Role Workflow | PIN Based Staff Access | Bank-wise Email/WhatsApp</p>
             </div>
           </footer>
         </div>
@@ -448,7 +444,6 @@
               <option value="staff" ${preSelectedRole === 'staff' ? 'selected' : ''}>👔 Staff</option>
               <option value="banker" ${preSelectedRole === 'banker' ? 'selected' : ''}>🏦 Banker</option>
               <option value="admin" ${preSelectedRole === 'admin' ? 'selected' : ''}>⚙️ Admin</option>
-              <option value="superadmin" ${preSelectedRole === 'superadmin' ? 'selected' : ''}>👑 Super Admin</option>
             </select>
             <input type="email" id="login-email" placeholder="Email Address" class="w-full p-3 border rounded-xl mb-3 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-blue-500">
             <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-xl mb-4 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-blue-500">
@@ -457,6 +452,13 @@
             <div class="mt-4 pt-3 border-t text-center">
               <p class="text-xs text-slate-400">New user? <button onclick="switchToRegister()" class="text-blue-600 font-semibold">Register here</button></p>
               <p class="text-xs text-slate-400 mt-2">Demo Password: <span class="font-mono font-bold">password</span></p>
+              <div class="grid grid-cols-2 gap-1 mt-2 text-xs">
+                <span class="text-blue-600">Customer: aarav@gmail.com</span>
+                <span class="text-purple-600">Connector: vikram@prime.com</span>
+                <span class="text-amber-600">Staff: meena@bank.com</span>
+                <span class="text-teal-600">Banker: amit@federaltrust.com</span>
+                <span class="text-red-600">Admin: admin@bank.com</span>
+              </div>
             </div>
           </div>
         </div>
