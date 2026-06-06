@@ -70,6 +70,21 @@
 
     function logout() { state.currentUser = null; saveData(); window.location.href = 'index.html'; }
 
+    // Delete Application function
+    function deleteApplication(appId) {
+      const app = state.applications.find(a => a.id === appId);
+      if (!app) return;
+      
+      // Confirm deletion with user
+      if (confirm(`⚠️ Are you sure you want to delete application ${appId} for ${app.customerName}?\n\nThis action cannot be undone!`)) {
+        // Remove from applications array
+        state.applications = state.applications.filter(a => a.id !== appId);
+        saveData();
+        showToast(`✅ Application ${appId} has been deleted successfully.`, 'success');
+        render();
+      }
+    }
+
     // Preview document function
     function previewDocument(dataUrl, fileName, fileType) {
       const modalContainer = document.getElementById('modal-container');
@@ -103,8 +118,9 @@
 
     window.previewDocument = previewDocument;
     window.closePreviewModal = closePreviewModal;
+    window.deleteApplication = deleteApplication;
 
-    // Show application details modal with document preview
+    // Show application details modal with document preview and delete option
     function showApplicationModal(app) {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
@@ -168,7 +184,11 @@
               </div>
               ` : ''}
             </div>
-            <div class="mt-6 flex justify-end">
+            <div class="mt-6 flex justify-end gap-3">
+              <button onclick="deleteApplication('${app.id}')" class="px-5 py-2 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Delete Application
+              </button>
               <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Close</button>
             </div>
           </div>
@@ -281,7 +301,7 @@
             const eligibleBanks = calculateEligibleBanks(app.monthlySalary, app.cibilScore, app.loanAmount);
             return `
               <div class="p-5 border-2 border-amber-200 rounded-xl bg-amber-50/30">
-                <div class="flex justify-between items-start mb-3"><div><h5 class="font-bold text-lg">${app.customerName}</h5><p class="text-sm text-slate-500">ID: ${app.id} • By: ${app.submittedBy}</p></div><span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">Pending</span></div>
+                <div class="flex justify-between items-start mb-3"><div><h5 class="font-bold text-lg">${app.customerName}</h5><p class="text-sm text-slate-500">ID: ${app.id} • By: ${app.submittedBy}</p></div><span class="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">Pending</span><button onclick="deleteApplication('${app.id}')" class="px-3 py-1 bg-red-500 text-white rounded-lg text-xs hover:bg-red-600 transition">🗑 Delete</button></div>
                 <div class="grid grid-cols-4 gap-3 mb-4 text-sm"><div><p class="text-slate-400">Loan</p><p class="font-bold">₹${app.loanAmount?.toLocaleString()}</p></div><div><p class="text-slate-400">Salary</p><p class="font-bold">₹${app.monthlySalary?.toLocaleString()}</p></div><div><p class="text-slate-400">CIBIL</p><p class="font-bold">${app.cibilScore}</p></div><div><p class="text-slate-400">Documents</p><p class="font-bold">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length}</p></div></div>
                 
                 <!-- Bank Eligibility Policy Section -->
@@ -331,7 +351,9 @@
         }
       }
       else if (section === 'applications') {
-        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">All Applications (${allApps.length})</h4><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-3">ID</th><th>Customer</th><th>Loan</th><th>Status</th><th>Assigned To</th><th>Documents</th><th>Actions</th><tr></thead><tbody>${allApps.map(app => `<tr class="border-b"><td class="py-3 font-mono text-blue-600">${app.id}</td><td class="font-bold">${app.customerName}</td><td>₹${app.loanAmount?.toLocaleString()}</td><td><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></td><td>${app.assignedStaffName ? `👔 ${app.assignedStaffName}` : app.assignedBank ? `🏦 ${app.assignedBank}` : '—'}</td><td><span class="text-xs">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length} files</span></td><td><button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs">View</button></td></tr>`).join('')}</tbody>}</div></div>`;
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">All Applications (${allApps.length})</h4><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-3">ID</th><th>Customer</th><th>Loan</th><th>Status</th><th>Assigned To</th><th>Documents</th><th>Actions</th></tr></thead><tbody>${allApps.map(app => `<tr class="border-b"><td class="py-3 font-mono text-blue-600">${app.id}</td><td class="font-bold">${app.customerName}</td><td>₹${app.loanAmount?.toLocaleString()}</td><td><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></td><td>${app.assignedStaffName ? `👔 ${app.assignedStaffName}` : app.assignedBank ? `🏦 ${app.assignedBank}` : '—'}</td><td><span class="text-xs">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length} files</span></td>
+                <td class="flex gap-1"><button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">View</button><button onclick="deleteApplication('${app.id}')" class="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button></td>
+              </tr>`).join('')}</tbody>}</div></div>`;
       }
     }
 
