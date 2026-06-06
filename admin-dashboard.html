@@ -35,20 +35,25 @@
           { id: 'b4', name: 'Metropolitan Bank', minSalary: 35000, minCibil: 720, maxLoan: 10000000, interestRate: 9.75, processingFee: 1.0, approvalTime: '96 Hours', status: 'Active' }
         ],
         staff: [
-          { id: 'st1', name: 'Meena Sharma', employeeId: 'STF001', email: 'meena@bank.com', pinCodes: ['560076', '560068'], role: 'Eligibility Staff', status: 'Active' },
-          { id: 'st2', name: 'Kavya Reddy', employeeId: 'STF002', email: 'kavya@bank.com', pinCodes: ['560029'], role: 'Document Staff', status: 'Active' }
+          { id: 'st1', name: 'Meena Sharma', employeeId: 'STF001', email: 'meena@bank.com', password: 'password', pinCodes: ['560076', '560068'], role: 'Eligibility Staff', status: 'Active' },
+          { id: 'st2', name: 'Kavya Reddy', employeeId: 'STF002', email: 'kavya@bank.com', password: 'password', pinCodes: ['560029'], role: 'Document Staff', status: 'Active' }
         ],
         bankers: [
-          { id: 'bkr1', name: 'Amit Patel', bankId: 'b1', bankName: 'Federal Trust Bank', email: 'amit@federaltrust.com', status: 'Approved' },
-          { id: 'bkr2', name: 'Priya Singh', bankId: 'b2', bankName: 'National Alliance Bank', email: 'priya@nationalalliance.com', status: 'Approved' }
+          { id: 'bkr1', name: 'Amit Patel', bankId: 'b1', bankName: 'Federal Trust Bank', email: 'amit@federaltrust.com', password: 'password', whatsapp: '9876543210', status: 'Approved' },
+          { id: 'bkr2', name: 'Priya Singh', bankId: 'b2', bankName: 'National Alliance Bank', email: 'priya@nationalalliance.com', password: 'password', whatsapp: '9876543211', status: 'Approved' }
         ],
         connectors: [
-          { id: 'con1', name: 'Vikram Singh', company: 'Prime Fin Services', email: 'vikram@prime.com', status: 'Approved', commissionRate: 1.5, commissionEarned: 0 }
+          { id: 'con1', name: 'Vikram Singh', company: 'Prime Fin Services', email: 'vikram@prime.com', password: 'password', mobile: '9123456789', status: 'Approved', commissionRate: 1.5, commissionEarned: 0 }
         ],
         customers: [
-          { id: 'c1', name: 'Aarav Sharma', email: 'aarav@gmail.com', mobile: '9876543210', pinCode: '560076', pan: 'ABCDE1234F', salary: 40000, cibil: 720, status: 'Active' }
+          { id: 'c1', name: 'Aarav Sharma', email: 'aarav@gmail.com', password: 'password', mobile: '9876543210', pinCode: '560076', pan: 'ABCDE1234F', salary: 40000, cibil: 720, status: 'Active' }
         ],
         applications: [],
+        pendingRegistrations: {
+          connectors: [],
+          staff: [],
+          bankers: []
+        },
         currentUser: null
       };
     }
@@ -70,14 +75,83 @@
 
     function logout() { state.currentUser = null; saveData(); window.location.href = 'index.html'; }
 
+    // ==================== REGISTRATION APPROVAL FUNCTIONS ====================
+    
+    // Approve Connector Registration
+    function approveConnector(connectorId) {
+      const pendingConnector = state.pendingRegistrations?.connectors?.find(c => c.id === connectorId);
+      if (pendingConnector) {
+        pendingConnector.status = 'Approved';
+        state.connectors.push(pendingConnector);
+        state.pendingRegistrations.connectors = state.pendingRegistrations.connectors.filter(c => c.id !== connectorId);
+        saveData();
+        showToast(`✅ Connector ${pendingConnector.name} approved successfully!`, 'success');
+        render();
+      }
+    }
+
+    function rejectConnector(connectorId) {
+      const pendingConnector = state.pendingRegistrations?.connectors?.find(c => c.id === connectorId);
+      if (pendingConnector && confirm(`Reject connector ${pendingConnector.name}?`)) {
+        state.pendingRegistrations.connectors = state.pendingRegistrations.connectors.filter(c => c.id !== connectorId);
+        saveData();
+        showToast(`❌ Connector ${pendingConnector.name} rejected.`, 'warning');
+        render();
+      }
+    }
+
+    // Approve Staff Registration
+    function approveStaff(staffId) {
+      const pendingStaff = state.pendingRegistrations?.staff?.find(s => s.id === staffId);
+      if (pendingStaff) {
+        pendingStaff.status = 'Active';
+        state.staff.push(pendingStaff);
+        state.pendingRegistrations.staff = state.pendingRegistrations.staff.filter(s => s.id !== staffId);
+        saveData();
+        showToast(`✅ Staff ${pendingStaff.name} approved successfully!`, 'success');
+        render();
+      }
+    }
+
+    function rejectStaff(staffId) {
+      const pendingStaff = state.pendingRegistrations?.staff?.find(s => s.id === staffId);
+      if (pendingStaff && confirm(`Reject staff ${pendingStaff.name}?`)) {
+        state.pendingRegistrations.staff = state.pendingRegistrations.staff.filter(s => s.id !== staffId);
+        saveData();
+        showToast(`❌ Staff ${pendingStaff.name} rejected.`, 'warning');
+        render();
+      }
+    }
+
+    // Approve Banker Registration
+    function approveBanker(bankerId) {
+      const pendingBanker = state.pendingRegistrations?.bankers?.find(b => b.id === bankerId);
+      if (pendingBanker) {
+        pendingBanker.status = 'Approved';
+        state.bankers.push(pendingBanker);
+        state.pendingRegistrations.bankers = state.pendingRegistrations.bankers.filter(b => b.id !== bankerId);
+        saveData();
+        showToast(`✅ Banker ${pendingBanker.name} approved for ${pendingBanker.bankName}!`, 'success');
+        render();
+      }
+    }
+
+    function rejectBanker(bankerId) {
+      const pendingBanker = state.pendingRegistrations?.bankers?.find(b => b.id === bankerId);
+      if (pendingBanker && confirm(`Reject banker ${pendingBanker.name}?`)) {
+        state.pendingRegistrations.bankers = state.pendingRegistrations.bankers.filter(b => b.id !== bankerId);
+        saveData();
+        showToast(`❌ Banker ${pendingBanker.name} rejected.`, 'warning');
+        render();
+      }
+    }
+
     // Delete Application function
     function deleteApplication(appId) {
       const app = state.applications.find(a => a.id === appId);
       if (!app) return;
       
-      // Confirm deletion with user
       if (confirm(`⚠️ Are you sure you want to delete application ${appId} for ${app.customerName}?\n\nThis action cannot be undone!`)) {
-        // Remove from applications array
         state.applications = state.applications.filter(a => a.id !== appId);
         saveData();
         showToast(`✅ Application ${appId} has been deleted successfully.`, 'success');
@@ -119,6 +193,12 @@
     window.previewDocument = previewDocument;
     window.closePreviewModal = closePreviewModal;
     window.deleteApplication = deleteApplication;
+    window.approveConnector = approveConnector;
+    window.rejectConnector = rejectConnector;
+    window.approveStaff = approveStaff;
+    window.rejectStaff = rejectStaff;
+    window.approveBanker = approveBanker;
+    window.rejectBanker = rejectBanker;
 
     // Show application details modal with document preview and delete option
     function showApplicationModal(app) {
@@ -143,7 +223,6 @@
                 <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Loan Purpose</p><p class="font-bold">${app.loanPurpose}</p></div>
               </div>
               
-              ${app.assignedStaffName ? `<div class="p-3 bg-purple-50 dark:bg-purple-950/30 rounded-xl"><p class="text-xs text-slate-400">Assigned Staff</p><p class="font-bold text-purple-600">👔 ${app.assignedStaffName}</p></div>` : ''}
               ${app.assignedBank ? `<div class="p-3 bg-green-50 dark:bg-green-950/30 rounded-xl"><p class="text-xs text-slate-400">Assigned Bank</p><p class="font-bold text-green-600">🏦 ${app.assignedBank}</p></div>` : ''}
               
               <!-- Documents Section with Preview -->
@@ -237,36 +316,28 @@
       }
     }
 
-    function assignToStaff(appId, staffId) {
-      if (!staffId) { showToast('Please select a staff member', 'error'); return; }
-      const app = state.applications.find(a => a.id === appId);
-      const staff = state.staff.find(s => s.id === staffId);
-      if (app && staff) {
-        app.assignedStaff = staffId;
-        app.assignedStaffName = staff.name;
-        app.status = 'Assigned to Staff';
-        app.assignedDate = new Date().toISOString().split('T')[0];
-        if (!app.activityLog) app.activityLog = [];
-        app.activityLog.push({ action: `Assigned to staff: ${staff.name} for verification`, timestamp: new Date().toISOString(), by: 'Admin' });
-        saveData();
-        showToast(`✅ Application assigned to ${staff.name} for verification.`, 'success');
-        render();
-      }
-    }
-
     window.assignDirectToBank = assignDirectToBank;
-    window.assignToStaff = assignToStaff;
 
     function render() {
-      const pendingApps = state.applications?.filter(a => a.status === 'Pending' && !a.assignedBank && !a.assignedStaff) || [];
+      const pendingApps = state.applications?.filter(a => a.status === 'Pending' && !a.assignedBank) || [];
       const allApps = state.applications || [];
+      const pendingConnectors = state.pendingRegistrations?.connectors || [];
+      const pendingStaff = state.pendingRegistrations?.staff || [];
+      const pendingBankers = state.pendingRegistrations?.bankers || [];
+      const totalPending = pendingConnectors.length + pendingStaff.length + pendingBankers.length;
       
       document.getElementById('app').innerHTML = `
         <div class="flex min-h-screen">
           <aside class="w-64 fixed h-full bg-white dark:bg-slate-900 border-r shadow-lg">
             <div class="h-16 flex items-center px-6 border-b"><span class="font-bold text-xl bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">Admin Panel</span></div>
             <div class="p-4"><div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white mb-6"><div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">A</div><div><h4 class="font-semibold">Admin</h4><p class="text-xs opacity-80">administrator</p></div></div>
-            <nav class="space-y-1"><button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📊 Dashboard</button><button onclick="showSection('pending')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📋 Pending (${pendingApps.length})</button><button onclick="showSection('applications')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📂 All Applications</button><button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 transition-all">🚪 Logout</button></nav></div>
+            <nav class="space-y-1">
+              <button onclick="showSection('dashboard')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📊 Dashboard</button>
+              <button onclick="showSection('pending')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📋 Pending Apps (${pendingApps.length})</button>
+              <button onclick="showSection('applications')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">📂 All Applications</button>
+              <button onclick="showSection('registrations')" class="w-full text-left px-4 py-3 rounded-xl hover:bg-slate-100 transition-all">👥 Pending Approvals (${totalPending})</button>
+              <button onclick="logout()" class="w-full text-left px-4 py-3 rounded-xl text-rose-500 hover:bg-rose-50 transition-all">🚪 Logout</button>
+            </nav></div>
           </aside>
           <main class="flex-1 ml-64 p-6"><div id="content" class="animate-fade-in"></div></main>
         </div>
@@ -276,26 +347,29 @@
 
     function showSection(section) {
       const content = document.getElementById('content');
-      const pendingApps = state.applications?.filter(a => a.status === 'Pending' && !a.assignedBank && !a.assignedStaff) || [];
+      const pendingApps = state.applications?.filter(a => a.status === 'Pending' && !a.assignedBank) || [];
       const allApps = state.applications || [];
+      const pendingConnectors = state.pendingRegistrations?.connectors || [];
+      const pendingStaff = state.pendingRegistrations?.staff || [];
+      const pendingBankers = state.pendingRegistrations?.bankers || [];
       
       if (section === 'dashboard') {
         content.innerHTML = `
           <div class="space-y-6">
-            <div class="p-8 rounded-3xl bg-gradient-to-r from-red-900 to-rose-900 text-white shadow-xl"><h3 class="text-2xl font-black">Admin Dashboard</h3><p class="text-sm text-rose-200">Manage applications - Assign to Staff OR Directly to Bank</p></div>
+            <div class="p-8 rounded-3xl bg-gradient-to-r from-red-900 to-rose-900 text-white shadow-xl"><h3 class="text-2xl font-black">Admin Dashboard</h3><p class="text-sm text-rose-200">Manage applications & user registrations</p></div>
             <div class="grid grid-cols-4 gap-6">
               <div class="p-6 bg-white rounded-3xl border"><p class="text-slate-400">Total Apps</p><p class="text-3xl font-black">${allApps.length}</p></div>
-              <div class="p-6 bg-amber-50 rounded-3xl border"><p class="text-amber-700">Pending</p><p class="text-3xl font-black text-amber-700">${pendingApps.length}</p></div>
-              <div class="p-6 bg-purple-50 rounded-3xl border"><p class="text-purple-700">With Staff</p><p class="text-3xl font-black text-purple-700">${allApps.filter(a => a.status === 'Assigned to Staff').length}</p></div>
-              <div class="p-6 bg-green-50 rounded-3xl border"><p class="text-green-700">With Bank</p><p class="text-3xl font-black text-green-700">${allApps.filter(a => a.status === 'Sent to Bank' || a.status === 'Bank Approved').length}</p></div>
+              <div class="p-6 bg-amber-50 rounded-3xl border"><p class="text-amber-700">Pending Apps</p><p class="text-3xl font-black text-amber-700">${pendingApps.length}</p></div>
+              <div class="p-6 bg-green-50 rounded-3xl border"><p class="text-green-700">Approved</p><p class="text-3xl font-black text-green-700">${allApps.filter(a => a.status === 'Bank Approved').length}</p></div>
+              <div class="p-6 bg-purple-50 rounded-3xl border"><p class="text-purple-700">Pending Approvals</p><p class="text-3xl font-black text-purple-700">${pendingConnectors.length + pendingStaff.length + pendingBankers.length}</p></div>
             </div>
-            <button onclick="showSection('pending')" class="px-6 py-3 bg-red-600 text-white rounded-xl font-bold">📋 Process Pending →</button>
+            <div class="grid grid-cols-2 gap-4"><button onclick="showSection('pending')" class="px-6 py-3 bg-red-600 text-white rounded-xl font-bold">📋 Process Pending Apps →</button><button onclick="showSection('registrations')" class="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold">👥 Approve Registrations →</button></div>
           </div>
         `;
       }
       else if (section === 'pending') {
         if (pendingApps.length === 0) {
-          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center py-12"><div class="text-6xl mb-4">✅</div><h4 class="text-lg font-black mb-2">No Pending Applications</h4><p class="text-slate-400">All applications have been assigned.</p></div>`;
+          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 text-center py-12"><div class="text-6xl mb-4">✅</div><h4 class="text-lg font-black mb-2">No Pending Applications</h4><p class="text-slate-400">All applications have been assigned to banks.</p></div>`;
         } else {
           content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">📋 Pending Applications (${pendingApps.length})</h4><div class="space-y-4">${pendingApps.map(app => {
             const eligibleBanks = calculateEligibleBanks(app.monthlySalary, app.cibilScore, app.loanAmount);
@@ -306,44 +380,30 @@
                 
                 <!-- Bank Eligibility Policy Section -->
                 <div class="mb-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                  <p class="text-sm font-bold text-green-700 mb-2">🏦 Bank Eligibility Policy (Based on Customer Profile)</p>
-                  <div class="space-y-2">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                      <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Customer Salary:</span><span class="font-bold">₹${app.monthlySalary?.toLocaleString()}/month</span></div>
-                      <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Customer CIBIL:</span><span class="font-bold">${app.cibilScore}</span></div>
-                      <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">Loan Amount:</span><span class="font-bold">₹${app.loanAmount?.toLocaleString()}</span></div>
-                      <div class="flex justify-between p-2 bg-white rounded"><span class="font-medium">FOIR:</span><span class="font-bold">${app.foir || 'Calculated'}%</span></div>
-                    </div>
+                  <p class="text-sm font-bold text-green-700 mb-2">🏦 Bank Eligibility Policy</p>
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div class="flex justify-between p-2 bg-white rounded"><span>Salary:</span><span class="font-bold">₹${app.monthlySalary?.toLocaleString()}</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span>CIBIL:</span><span class="font-bold">${app.cibilScore}</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span>Loan:</span><span class="font-bold">₹${app.loanAmount?.toLocaleString()}</span></div>
+                    <div class="flex justify-between p-2 bg-white rounded"><span>FOIR:</span><span class="font-bold">${app.foir || 'Calculated'}%</span></div>
                   </div>
                 </div>
                 
-                <!-- Eligible Banks List with Details -->
+                <!-- Eligible Banks List -->
                 <div class="mb-4">
-                  <p class="text-sm font-bold text-blue-700 mb-2">✅ Eligible Banks (${eligibleBanks.length} banks match criteria):</p>
+                  <p class="text-sm font-bold text-blue-700 mb-2">✅ Eligible Banks (${eligibleBanks.length}):</p>
                   <div class="space-y-2 max-h-48 overflow-y-auto">
                     ${eligibleBanks.map(bank => `
                       <div class="p-2 border rounded-lg bg-white flex justify-between items-center">
-                        <div>
-                          <p class="font-semibold text-sm">${bank.name}</p>
-                          <div class="flex gap-3 text-xs text-slate-500">
-                            <span>Min Salary: ₹${bank.minSalary.toLocaleString()}</span>
-                            <span>Min CIBIL: ${bank.minCibil}</span>
-                            <span>Max Loan: ₹${bank.maxLoan.toLocaleString()}</span>
-                            <span>Interest: ${bank.interestRate}%</span>
-                            <span>Fee: ${bank.processingFee}%</span>
-                          </div>
-                        </div>
+                        <div><p class="font-semibold text-sm">${bank.name}</p><div class="flex gap-3 text-xs text-slate-500"><span>Min Salary: ₹${bank.minSalary.toLocaleString()}</span><span>Min CIBIL: ${bank.minCibil}</span><span>Interest: ${bank.interestRate}%</span></div></div>
                         <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">Eligible ✓</span>
                       </div>
                     `).join('')}
-                    ${eligibleBanks.length === 0 ? '<div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">⚠️ No banks match the customer\'s eligibility criteria. Consider counseling the customer to improve CIBIL or increase income.</div>' : ''}
+                    ${eligibleBanks.length === 0 ? '<div class="p-3 bg-red-50 text-red-600 rounded-lg text-sm text-center">⚠️ No banks match eligibility criteria</div>' : ''}
                   </div>
                 </div>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div class="p-3 rounded-xl bg-purple-50"><p class="text-sm font-bold text-purple-700 mb-2">👔 Assign to Staff</p><div class="flex gap-2"><select id="staff-${app.id}" class="px-3 py-2 border rounded-lg text-sm flex-1"><option value="">Select Staff...</option>${state.staff.filter(s => s.status === 'Active').map(s => `<option value="${s.id}">${s.name} (${s.role})</option>`).join('')}</select><button onclick="assignToStaff('${app.id}', document.getElementById('staff-${app.id}').value)" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">Assign</button></div><p class="text-xs text-purple-500 mt-2">Staff will verify documents and forward to bank</p></div>
-                  <div class="p-3 rounded-xl bg-blue-50"><p class="text-sm font-bold text-blue-700 mb-2">🏦 Assign Direct to Bank</p><div class="flex gap-2"><select id="bank-${app.id}" class="px-3 py-2 border rounded-lg text-sm flex-1"><option value="">Select Bank...</option>${eligibleBanks.map(b => `<option value="${b.name}">${b.name}</option>`).join('')}</select><button onclick="assignDirectToBank('${app.id}', document.getElementById('bank-${app.id}').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Send to Bank</button></div><p class="text-xs text-blue-500 mt-2">Directly send application to bank for approval</p></div>
-                </div>
+                <div class="mb-4 p-3 rounded-xl bg-blue-50"><p class="text-sm font-bold text-blue-700 mb-2">🏦 Assign Direct to Bank</p><div class="flex gap-2"><select id="bank-${app.id}" class="px-3 py-2 border rounded-lg text-sm flex-1"><option value="">Select Bank...</option>${eligibleBanks.map(b => `<option value="${b.name}">${b.name}</option>`).join('')}</select><button onclick="assignDirectToBank('${app.id}', document.getElementById('bank-${app.id}').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm">Send to Bank</button></div><p class="text-xs text-blue-500 mt-2">Staff will also have access to all applications</p></div>
                 <div class="flex justify-between items-center"><button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1.5 bg-slate-600 text-white rounded-lg text-xs">View Full Details & Documents</button><span class="text-xs text-slate-400">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length} documents uploaded</span></div>
               </div>
             `;
@@ -351,9 +411,48 @@
         }
       }
       else if (section === 'applications') {
-        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">All Applications (${allApps.length})</h4><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-3">ID</th><th>Customer</th><th>Loan</th><th>Status</th><th>Assigned To</th><th>Documents</th><th>Actions</th></tr></thead><tbody>${allApps.map(app => `<tr class="border-b"><td class="py-3 font-mono text-blue-600">${app.id}</td><td class="font-bold">${app.customerName}</td><td>₹${app.loanAmount?.toLocaleString()}</td><td><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></td><td>${app.assignedStaffName ? `👔 ${app.assignedStaffName}` : app.assignedBank ? `🏦 ${app.assignedBank}` : '—'}</td><td><span class="text-xs">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length} files</span></td>
-                <td class="flex gap-1"><button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">View</button><button onclick="deleteApplication('${app.id}')" class="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button></td>
-              </tr>`).join('')}</tbody>}</div></div>`;
+        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">All Applications (${allApps.length})</h4><div class="overflow-x-auto"><table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-3">ID</th><th>Customer</th><th>Loan</th><th>Status</th><th>Assigned Bank</th><th>Documents</th><th>Actions</th></tr></thead><tbody>${allApps.map(app => `<tr class="border-b"><td class="py-3 font-mono text-blue-600">${app.id}</td><td class="font-bold">${app.customerName}</td><td>₹${app.loanAmount?.toLocaleString()}</td><td><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></td><td>${app.assignedBank ? `🏦 ${app.assignedBank}` : '—'}</td><td><span class="text-xs">${Object.values(app.documents || {}).filter(d => d.status === 'Uploaded').length}/${Object.keys(app.documents || {}).length} files</span></td><td class="flex gap-1"><button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-2 py-1 bg-blue-600 text-white rounded text-xs">View</button><button onclick="deleteApplication('${app.id}')" class="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button></td></tr>`).join('')}</tbody>}</div></div>`;
+      }
+      else if (section === 'registrations') {
+        content.innerHTML = `
+          <div class="space-y-8">
+            <!-- Pending Connector Approvals -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-4 flex items-center gap-2"><span class="text-purple-600">🤝</span> Pending Connector Approvals (${pendingConnectors.length})</h4>
+              ${pendingConnectors.length === 0 ? '<p class="text-slate-400 text-center py-4">No pending connector registrations.</p>' : `
+                <div class="space-y-3">${pendingConnectors.map(c => `
+                  <div class="p-4 border rounded-xl flex justify-between items-center">
+                    <div><p class="font-bold">${c.name}</p><p class="text-sm text-slate-500">${c.company} • ${c.email} • ${c.mobile}</p><p class="text-xs text-amber-600">Commission Rate: ${c.commissionRate}%</p></div>
+                    <div class="flex gap-2"><button onclick="approveConnector('${c.id}')" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">✅ Approve</button><button onclick="rejectConnector('${c.id}')" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">❌ Reject</button></div>
+                  </div>`).join('')}</div>
+              `}
+            </div>
+            
+            <!-- Pending Staff Approvals -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-4 flex items-center gap-2"><span class="text-amber-600">👔</span> Pending Staff Approvals (${pendingStaff.length})</h4>
+              ${pendingStaff.length === 0 ? '<p class="text-slate-400 text-center py-4">No pending staff registrations.</p>' : `
+                <div class="space-y-3">${pendingStaff.map(s => `
+                  <div class="p-4 border rounded-xl flex justify-between items-center">
+                    <div><p class="font-bold">${s.name}</p><p class="text-sm text-slate-500">${s.role} • ${s.email} • PIN: ${s.pinCodes?.join(', ')}</p></div>
+                    <div class="flex gap-2"><button onclick="approveStaff('${s.id}')" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">✅ Approve</button><button onclick="rejectStaff('${s.id}')" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">❌ Reject</button></div>
+                  </div>`).join('')}</div>
+              `}
+            </div>
+            
+            <!-- Pending Banker Approvals -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+              <h4 class="text-lg font-black mb-4 flex items-center gap-2"><span class="text-teal-600">🏦</span> Pending Banker Approvals (${pendingBankers.length})</h4>
+              ${pendingBankers.length === 0 ? '<p class="text-slate-400 text-center py-4">No pending banker registrations.</p>' : `
+                <div class="space-y-3">${pendingBankers.map(b => `
+                  <div class="p-4 border rounded-xl flex justify-between items-center">
+                    <div><p class="font-bold">${b.name}</p><p class="text-sm text-slate-500">${b.bankName} • ${b.email} • WhatsApp: ${b.whatsapp}</p></div>
+                    <div class="flex gap-2"><button onclick="approveBanker('${b.id}')" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm">✅ Approve</button><button onclick="rejectBanker('${b.id}')" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm">❌ Reject</button></div>
+                  </div>`).join('')}</div>
+              `}
+            </div>
+          </div>
+        `;
       }
     }
 
