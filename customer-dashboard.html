@@ -88,7 +88,102 @@
     window.previewDocument = previewDocument;
     window.closePreviewModal = closePreviewModal;
 
-    // Show application details modal with document preview
+    // Show Edit Profile Modal
+    function showEditProfileModal() {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">✏️ Edit Profile</h3>
+              <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600 transition">×</button>
+            </div>
+            <form id="editProfileForm" class="space-y-4">
+              <div><label class="text-sm font-semibold">Full Name</label><input type="text" id="edit-name" value="${currentUser.name}" class="w-full p-3 border rounded-xl mt-1" required></div>
+              <div><label class="text-sm font-semibold">Mobile Number</label><input type="tel" id="edit-mobile" value="${currentUser.mobile}" class="w-full p-3 border rounded-xl mt-1" required></div>
+              <div><label class="text-sm font-semibold">PIN Code</label><input type="text" id="edit-pincode" value="${currentUser.pinCode || ''}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Aadhaar Number</label><input type="text" id="edit-aadhaar" value="${currentUser.aadhaar || ''}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Date of Birth</label><input type="date" id="edit-dob" value="${currentUser.dob || ''}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Gender</label><select id="edit-gender" class="w-full p-3 border rounded-xl mt-1"><option value="">Select</option><option ${currentUser.gender === 'Male' ? 'selected' : ''}>Male</option><option ${currentUser.gender === 'Female' ? 'selected' : ''}>Female</option><option ${currentUser.gender === 'Other' ? 'selected' : ''}>Other</option></select></div>
+              <div><label class="text-sm font-semibold">Company Name</label><input type="text" id="edit-company" value="${currentUser.companyName || ''}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Employment Type</label><select id="edit-employment" class="w-full p-3 border rounded-xl mt-1"><option value="">Select</option><option ${currentUser.employmentType === 'Salaried' ? 'selected' : ''}>Salaried</option><option ${currentUser.employmentType === 'Self-Employed' ? 'selected' : ''}>Self-Employed</option><option ${currentUser.employmentType === 'Business' ? 'selected' : ''}>Business</option></select></div>
+              <div class="flex gap-3 pt-3"><button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">Save Changes</button><button type="button" onclick="closeModal()" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition">Cancel</button></div>
+            </form>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+      
+      document.getElementById('editProfileForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        currentUser.name = document.getElementById('edit-name').value;
+        currentUser.mobile = document.getElementById('edit-mobile').value;
+        currentUser.pinCode = document.getElementById('edit-pincode').value;
+        currentUser.aadhaar = document.getElementById('edit-aadhaar').value;
+        currentUser.dob = document.getElementById('edit-dob').value;
+        currentUser.gender = document.getElementById('edit-gender').value;
+        currentUser.companyName = document.getElementById('edit-company').value;
+        currentUser.employmentType = document.getElementById('edit-employment').value;
+        
+        // Update in customers array
+        const customerIndex = state.customers.findIndex(c => c.id === currentUser.id);
+        if (customerIndex !== -1) {
+          state.customers[customerIndex] = { ...state.customers[customerIndex], ...currentUser };
+        }
+        saveData();
+        showToast('✅ Profile updated successfully!', 'success');
+        closeModal();
+        render();
+      });
+    }
+
+    // Show Edit Application Modal
+    function showEditApplicationModal(app) {
+      const modalContainer = document.getElementById('modal-container');
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
+          <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">✏️ Edit Application: ${app.id}</h3>
+              <button onclick="closeModal()" class="text-2xl text-slate-400 hover:text-slate-600 transition">×</button>
+            </div>
+            <form id="editApplicationForm" class="space-y-4">
+              <div><label class="text-sm font-semibold">Loan Amount (₹)</label><input type="number" id="edit-loanAmount" value="${app.loanAmount}" class="w-full p-3 border rounded-xl mt-1" required></div>
+              <div><label class="text-sm font-semibold">Loan Purpose</label><select id="edit-loanPurpose" class="w-full p-3 border rounded-xl mt-1"><option ${app.loanPurpose === 'Home Purchase' ? 'selected' : ''}>Home Purchase</option><option ${app.loanPurpose === 'Home Renovation' ? 'selected' : ''}>Home Renovation</option><option ${app.loanPurpose === 'Debt Consolidation' ? 'selected' : ''}>Debt Consolidation</option><option ${app.loanPurpose === 'Business Expansion' ? 'selected' : ''}>Business Expansion</option><option ${app.loanPurpose === 'Education Fees' ? 'selected' : ''}>Education Fees</option><option ${app.loanPurpose === 'Medical Emergency' ? 'selected' : ''}>Medical Emergency</option></select></div>
+              <div><label class="text-sm font-semibold">Loan Tenure</label><select id="edit-loanTenure" class="w-full p-3 border rounded-xl mt-1"><option ${app.loanTenure === '12' ? 'selected' : ''}>12 months</option><option ${app.loanTenure === '24' ? 'selected' : ''}>24 months</option><option ${app.loanTenure === '36' ? 'selected' : ''}>36 months</option><option ${app.loanTenure === '48' ? 'selected' : ''}>48 months</option><option ${app.loanTenure === '60' ? 'selected' : ''}>60 months</option></select></div>
+              <div><label class="text-sm font-semibold">PIN Code</label><input type="text" id="edit-pinCode" value="${app.pinCode}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Company Name</label><input type="text" id="edit-companyName" value="${app.companyName || ''}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div><label class="text-sm font-semibold">Existing EMI (₹)</label><input type="number" id="edit-existingEmi" value="${app.existingEmi || 0}" class="w-full p-3 border rounded-xl mt-1"></div>
+              <div class="bg-amber-50 p-3 rounded-lg text-sm"><p class="font-semibold">⚠️ Note:</p><p>Editing application will require re-approval from admin. Changes will reset the application status to "Pending".</p></div>
+              <div class="flex gap-3 pt-3"><button type="submit" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">Save Changes</button><button type="button" onclick="closeModal()" class="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition">Cancel</button></div>
+            </form>
+          </div>
+        </div>
+      `;
+      modalContainer.classList.remove('hidden');
+      
+      document.getElementById('editApplicationForm')?.addEventListener('submit', (e) => {
+        e.preventDefault();
+        app.loanAmount = parseInt(document.getElementById('edit-loanAmount').value);
+        app.loanPurpose = document.getElementById('edit-loanPurpose').value;
+        app.loanTenure = document.getElementById('edit-loanTenure').value.split(' ')[0];
+        app.pinCode = document.getElementById('edit-pinCode').value;
+        app.companyName = document.getElementById('edit-companyName').value;
+        app.existingEmi = parseInt(document.getElementById('edit-existingEmi').value) || 0;
+        app.status = 'Pending';
+        app.assignedStaff = null;
+        app.assignedStaffName = null;
+        app.assignedBank = null;
+        if (!app.activityLog) app.activityLog = [];
+        app.activityLog.push({ action: `Application edited by customer`, timestamp: new Date().toISOString(), by: currentUser.name });
+        saveData();
+        showToast('✅ Application updated successfully! It will be reviewed by admin.', 'success');
+        closeModal();
+        render();
+      });
+    }
+
+    // Show application details modal with document preview and edit button
     function showApplicationModal(app) {
       const modalContainer = document.getElementById('modal-container');
       modalContainer.innerHTML = `
@@ -151,7 +246,8 @@
               </div>
               ` : ''}
             </div>
-            <div class="mt-6 flex justify-end">
+            <div class="mt-6 flex justify-end gap-3">
+              ${app.status === 'Pending' || app.status === 'Rejected' ? `<button onclick="showEditApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-5 py-2 bg-amber-600 text-white rounded-xl text-sm font-bold hover:bg-amber-700 transition">✏️ Edit Application</button>` : ''}
               <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Close</button>
             </div>
           </div>
@@ -168,6 +264,8 @@
 
     window.closeModal = closeModal;
     window.showApplicationModal = showApplicationModal;
+    window.showEditProfileModal = showEditProfileModal;
+    window.showEditApplicationModal = showEditApplicationModal;
 
     function render() {
       const myApps = state.applications?.filter(a => a.customerEmail === currentUser.email) || [];
@@ -239,11 +337,11 @@
                   <input type="text" name="name" value="${currentUser.name}" class="p-3 border rounded-xl bg-slate-100" readonly>
                   <input type="email" name="email" value="${currentUser.email}" class="p-3 border rounded-xl bg-slate-100" readonly>
                   <input type="tel" name="mobile" value="${currentUser.mobile}" class="p-3 border rounded-xl bg-slate-100" readonly>
-                  <input type="date" name="dob" placeholder="Date of Birth" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
-                  <select name="gender" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Gender</option><option>Male</option><option>Female</option><option>Other</option></select>
-                  <input type="text" name="pinCode" placeholder="PIN Code *" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800" required>
+                  <input type="date" name="dob" placeholder="Date of Birth" value="${currentUser.dob || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <select name="gender" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Select Gender</option><option ${currentUser.gender === 'Male' ? 'selected' : ''}>Male</option><option ${currentUser.gender === 'Female' ? 'selected' : ''}>Female</option><option ${currentUser.gender === 'Other' ? 'selected' : ''}>Other</option></select>
+                  <input type="text" name="pinCode" placeholder="PIN Code *" value="${currentUser.pinCode || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800" required>
                   <input type="text" name="pan" value="${currentUser.pan}" class="p-3 border rounded-xl bg-slate-100" readonly>
-                  <input type="text" name="aadhaar" placeholder="Aadhaar Number" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="text" name="aadhaar" placeholder="Aadhaar Number" value="${currentUser.aadhaar || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
                 </div>
               </div>
 
@@ -251,11 +349,11 @@
               <div class="border-b pb-3">
                 <h5 class="font-bold text-lg text-blue-600 mb-3">💼 Employment Details</h5>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <select name="employmentType" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Employment Type</option><option>Salaried</option><option>Self-Employed</option><option>Business</option><option>Professional</option></select>
-                  <input type="text" name="companyName" placeholder="Company / Business Name" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
-                  <input type="number" name="workExperience" placeholder="Years of Experience" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <select name="employmentType" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800"><option value="">Employment Type</option><option ${currentUser.employmentType === 'Salaried' ? 'selected' : ''}>Salaried</option><option ${currentUser.employmentType === 'Self-Employed' ? 'selected' : ''}>Self-Employed</option><option ${currentUser.employmentType === 'Business' ? 'selected' : ''}>Business</option></select>
+                  <input type="text" name="companyName" placeholder="Company / Business Name" value="${currentUser.companyName || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="number" name="workExperience" placeholder="Years of Experience" value="${currentUser.workExperience || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
                   <input type="number" name="monthlySalary" value="${currentUser.salary}" class="p-3 border rounded-xl bg-slate-100" readonly>
-                  <input type="number" name="existingEmi" placeholder="Existing EMI (₹)" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <input type="number" name="existingEmi" placeholder="Existing EMI (₹)" value="${currentUser.existingEmi || ''}" class="p-3 border rounded-xl bg-slate-50 dark:bg-slate-800">
                   <input type="number" name="cibil" value="${currentUser.cibil}" class="p-3 border rounded-xl bg-slate-100" readonly>
                 </div>
               </div>
@@ -298,7 +396,6 @@
           const fd = new FormData(e.target);
           const documents = {};
           
-          // Process file uploads
           const fileInputs = ['panDoc', 'aadhaarDoc', 'photoDoc', 'salaryDoc', 'bankDoc', 'itrDoc'];
           for (const inputName of fileInputs) {
             const file = fd.get(inputName);
@@ -381,7 +478,10 @@
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-xs"><div><span class="text-slate-400">Salary:</span> <span class="font-semibold">₹${app.monthlySalary?.toLocaleString()}</span></div><div><span class="text-slate-400">CIBIL:</span> <span class="font-semibold">${app.cibilScore}</span></div><div><span class="text-slate-400">Submitted:</span> <span class="font-semibold">${app.submittedDate}</span></div><div><span class="text-slate-400">Bank:</span> <span class="font-semibold ${app.assignedBank ? 'text-green-600' : 'text-amber-600'}">${app.assignedBank || 'Not assigned'}</span></div></div>
                         <div class="flex gap-3 mt-2 text-xs"><span class="text-slate-400">Documents:</span>${Object.entries(app.documents || {}).map(([key, val]) => `<span class="${val.status === 'Uploaded' ? 'text-green-600' : 'text-red-500'} ml-2">${key.toUpperCase()} ${val.status === 'Uploaded' ? '✓' : '✗'}</span>`).join('')}</div>
                       </div>
-                      <button class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50 transition" onclick="event.stopPropagation();showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">View Details</button>
+                      <div class="flex flex-col gap-2">
+                        ${app.status === 'Pending' || app.status === 'Rejected' ? `<button class="px-3 py-1 bg-amber-500 text-white rounded-lg text-sm" onclick="event.stopPropagation();showEditApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">✏️ Edit</button>` : ''}
+                        <button class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50 transition" onclick="event.stopPropagation();showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">View Details</button>
+                      </div>
                     </div>
                   </div>
                 `).join('')}
@@ -393,12 +493,21 @@
       else if (section === 'profile') {
         content.innerHTML = `
           <div class="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border p-8 shadow-xl">
-            <h4 class="text-xl font-black mb-6">My Profile</h4>
+            <div class="flex justify-between items-center mb-6">
+              <h4 class="text-xl font-black">My Profile</h4>
+              <button onclick="showEditProfileModal()" class="px-4 py-2 bg-amber-500 text-white rounded-xl text-sm font-bold hover:bg-amber-600 transition">✏️ Edit Profile</button>
+            </div>
             <div class="space-y-4">
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Full Name</p><p class="font-bold">${currentUser.name}</p></div>
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Email</p><p class="font-bold">${currentUser.email}</p></div>
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Mobile</p><p class="font-bold">${currentUser.mobile}</p></div>
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">PAN</p><p class="font-bold">${currentUser.pan}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">PIN Code</p><p class="font-bold">${currentUser.pinCode || 'Not set'}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Aadhaar</p><p class="font-bold">${currentUser.aadhaar || 'Not set'}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Date of Birth</p><p class="font-bold">${currentUser.dob || 'Not set'}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Gender</p><p class="font-bold">${currentUser.gender || 'Not set'}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Company Name</p><p class="font-bold">${currentUser.companyName || 'Not set'}</p></div>
+              <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Employment Type</p><p class="font-bold">${currentUser.employmentType || 'Not set'}</p></div>
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">Monthly Salary</p><p class="font-bold">₹${currentUser.salary?.toLocaleString()}</p></div>
               <div class="p-4 border rounded-2xl"><p class="text-xs text-slate-400">CIBIL Score</p><p class="font-bold">${currentUser.cibil}</p></div>
             </div>
