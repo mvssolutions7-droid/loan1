@@ -25,6 +25,9 @@
     let state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
     let currentUser = state.currentUser || {};
 
+    // Status filter
+    let currentStatusFilter = 'all';
+
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
     function showToast(message, type = 'success') {
@@ -145,7 +148,7 @@
             <div class="space-y-4">
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Application ID</p><p class="font-bold text-blue-600">${app.id}</p></div>
-                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Status</p><p class="font-bold"><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></p></div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Status</p><p class="font-bold"><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Sent to Bank' ? 'bg-blue-100 text-blue-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : app.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100'}">${app.status}</span></p></div>
                 <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Customer Name</p><p class="font-bold">${app.customerName || 'N/A'}</p></div>
                 <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Email</p><p class="font-bold">${app.customerEmail || 'N/A'}</p></div>
                 <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"><p class="text-xs text-slate-400">Mobile</p><p class="font-bold">${app.customerMobile || 'N/A'}</p></div>
@@ -185,15 +188,26 @@
                 </div>
               </div>
               
-              <!-- Activity Log -->
-              ${app.activityLog && app.activityLog.length ? `
+              <!-- Status Timeline / Activity Log -->
               <div class="border rounded-xl p-4">
-                <p class="text-sm font-bold mb-3 text-blue-600">📜 Activity Log</p>
-                <div class="space-y-1 max-h-32 overflow-y-auto">
-                  ${app.activityLog.map(log => `<div class="text-xs p-1"><span class="text-slate-400">${new Date(log.timestamp).toLocaleString()}</span> - ${log.action} <span class="text-slate-400">by ${log.by}</span></div>`).join('')}
+                <p class="text-sm font-bold mb-3 text-blue-600">📜 Application Timeline</p>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  <div class="flex items-center gap-2 text-sm">
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span class="text-slate-500">Submitted:</span>
+                    <span class="font-medium">${app.submittedDate}</span>
+                  </div>
+                  ${app.assignedBank ? `<div class="flex items-center gap-2 text-sm"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="text-slate-500">Bank Assigned:</span><span class="font-medium">${app.assignedBank} (${app.assignedDate || 'Recently'})</span></div>` : ''}
+                  ${app.status === 'Bank Approved' ? `<div class="flex items-center gap-2 text-sm"><div class="w-2 h-2 rounded-full bg-emerald-500"></div><span class="text-slate-500">Approved:</span><span class="font-medium text-green-600">by ${app.bankerName || 'Banker'} on ${app.decisionDate}</span>${app.bankerRemarks ? `<p class="text-xs text-slate-500 ml-6">Remarks: ${app.bankerRemarks}</p>` : ''}</div>` : ''}
+                  ${app.status === 'Rejected' ? `<div class="flex items-center gap-2 text-sm"><div class="w-2 h-2 rounded-full bg-red-500"></div><span class="text-slate-500">Rejected:</span><span class="font-medium text-red-600">by ${app.bankerName || 'Banker'} on ${app.decisionDate}</span>${app.bankerRemarks ? `<p class="text-xs text-slate-500 ml-6">Remarks: ${app.bankerRemarks}</p>` : ''}</div>` : ''}
+                  ${app.activityLog && app.activityLog.map(log => `
+                    <div class="flex items-start gap-2 text-xs">
+                      <div class="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1"></div>
+                      <div><span class="text-slate-400">${new Date(log.timestamp).toLocaleString()}</span><br><span>${log.action}</span><span class="text-slate-400 ml-1">by ${log.by}</span></div>
+                    </div>
+                  `).join('')}
                 </div>
               </div>
-              ` : ''}
             </div>
             <div class="mt-6 flex justify-end">
               <button onclick="closeModal()" class="px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition">Close</button>
@@ -219,8 +233,23 @@
     window.closeModal = closeModal;
     window.showApplicationModal = showApplicationModal;
 
+    // Set status filter
+    function setStatusFilter(filter) {
+      currentStatusFilter = filter;
+      showSection('leads');
+    }
+
+    window.setStatusFilter = setStatusFilter;
+
     function render() {
-      const myLeads = state.applications?.filter(a => a.connectorId === currentUser.id) || [];
+      // Get ONLY this connector's leads
+      const allMyLeads = state.applications?.filter(a => a.connectorId === currentUser.id) || [];
+      
+      // Count by status
+      const pendingCount = allMyLeads.filter(a => a.status === 'Pending' && !a.assignedBank).length;
+      const sentToBankCount = allMyLeads.filter(a => a.status === 'Sent to Bank').length;
+      const approvedCount = allMyLeads.filter(a => a.status === 'Bank Approved').length;
+      const rejectedCount = allMyLeads.filter(a => a.status === 'Rejected').length;
       
       document.getElementById('app').innerHTML = `
         <div class="flex min-h-screen">
@@ -256,8 +285,27 @@
 
     function showSection(section) {
       const content = document.getElementById('content');
-      const myLeads = state.applications?.filter(a => a.connectorId === currentUser.id) || [];
-      const approvedLeads = myLeads.filter(a => a.status === 'Bank Approved').length;
+      // Get ONLY this connector's leads
+      let myLeads = state.applications?.filter(a => a.connectorId === currentUser.id) || [];
+      
+      // Apply status filter
+      if (currentStatusFilter !== 'all') {
+        if (currentStatusFilter === 'pending') {
+          myLeads = myLeads.filter(a => a.status === 'Pending' && !a.assignedBank);
+        } else if (currentStatusFilter === 'sent') {
+          myLeads = myLeads.filter(a => a.status === 'Sent to Bank');
+        } else if (currentStatusFilter === 'approved') {
+          myLeads = myLeads.filter(a => a.status === 'Bank Approved');
+        } else if (currentStatusFilter === 'rejected') {
+          myLeads = myLeads.filter(a => a.status === 'Rejected');
+        }
+      }
+      
+      const allMyLeads = state.applications?.filter(a => a.connectorId === currentUser.id) || [];
+      const pendingCount = allMyLeads.filter(a => a.status === 'Pending' && !a.assignedBank).length;
+      const sentCount = allMyLeads.filter(a => a.status === 'Sent to Bank').length;
+      const approvedCount = allMyLeads.filter(a => a.status === 'Bank Approved').length;
+      const rejectedCount = allMyLeads.filter(a => a.status === 'Rejected').length;
       const totalCommission = (currentUser.commissionEarned || 0);
       
       if (section === 'dashboard') {
@@ -267,10 +315,28 @@
               <div class="absolute top-0 right-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl"></div>
               <h3 class="text-2xl font-black tracking-tight">Connector Dashboard</h3>
               <p class="text-sm text-purple-200 mt-2">Welcome, ${currentUser.name}</p>
+              <p class="text-xs text-purple-200/70 mt-1">Track your submitted applications and commissions</p>
             </div>
-            <div class="grid grid-cols-3 gap-6">
-              <div class="p-6 bg-white dark:bg-slate-900 rounded-3xl border shadow-sm"><p class="text-slate-400">Total Leads</p><p class="text-3xl font-black">${myLeads.length}</p></div>
-              <div class="p-6 bg-emerald-50 dark:bg-emerald-950/20 rounded-3xl border shadow-sm"><p class="text-emerald-700">Approved</p><p class="text-3xl font-black text-emerald-700">${approvedLeads}</p></div>
+            <div class="grid grid-cols-4 gap-4">
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border text-center cursor-pointer hover:shadow-md transition" onclick="setStatusFilter('pending')">
+                <p class="text-amber-600 text-xs font-bold">PENDING</p>
+                <p class="text-2xl font-black">${pendingCount}</p>
+              </div>
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border text-center cursor-pointer hover:shadow-md transition" onclick="setStatusFilter('sent')">
+                <p class="text-blue-600 text-xs font-bold">SENT TO BANK</p>
+                <p class="text-2xl font-black">${sentCount}</p>
+              </div>
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border text-center cursor-pointer hover:shadow-md transition" onclick="setStatusFilter('approved')">
+                <p class="text-emerald-600 text-xs font-bold">APPROVED</p>
+                <p class="text-2xl font-black">${approvedCount}</p>
+              </div>
+              <div class="p-4 bg-white dark:bg-slate-900 rounded-xl border text-center cursor-pointer hover:shadow-md transition" onclick="setStatusFilter('rejected')">
+                <p class="text-rose-600 text-xs font-bold">REJECTED</p>
+                <p class="text-2xl font-black">${rejectedCount}</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-6">
+              <div class="p-6 bg-white dark:bg-slate-900 rounded-3xl border shadow-sm"><p class="text-slate-400">Total Leads</p><p class="text-3xl font-black">${allMyLeads.length}</p></div>
               <div class="p-6 bg-purple-50 dark:bg-purple-950/20 rounded-3xl border shadow-sm"><p class="text-purple-700">Commission Earned</p><p class="text-3xl font-black text-purple-700">₹${totalCommission.toLocaleString()}</p></div>
             </div>
             <button onclick="showSection('add')" class="px-6 py-3 bg-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-600/20 hover:bg-purple-700 transition">➕ Add New Customer</button>
@@ -278,10 +344,11 @@
         `;
       }
       else if (section === 'add') {
+        currentStatusFilter = 'all';
         content.innerHTML = `
           <div class="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl border p-8 shadow-xl">
             <h4 class="text-xl font-black mb-6">Add Customer Application</h4>
-            <p class="text-sm text-amber-600 mb-4 bg-amber-50 p-3 rounded-lg">📌 After submission, admin will assign a bank or staff to process this application.</p>
+            <p class="text-sm text-amber-600 mb-4 bg-amber-50 p-3 rounded-lg">📌 After submission, admin will assign a bank to process this application.</p>
             <p class="text-xs text-slate-500 mb-4 bg-blue-50 p-2 rounded-lg">⚠️ For preview to work, please upload files smaller than 2MB. Larger files will show only metadata.</p>
             
             <form id="customerForm" class="space-y-6" enctype="multipart/form-data">
@@ -351,7 +418,6 @@
           const fd = new FormData(e.target);
           const documents = {};
           
-          // Process file uploads
           const fileInputs = ['panDoc', 'aadhaarDoc', 'photoDoc', 'salaryDoc', 'bankDoc', 'itrDoc'];
           for (const inputName of fileInputs) {
             const file = fd.get(inputName);
@@ -370,12 +436,7 @@
                   uploadDate: new Date().toISOString()
                 };
               } catch (error) {
-                documents[docKey] = {
-                  status: 'Uploaded (No Preview)',
-                  fileName: file.name,
-                  fileSize: (file.size / 1024).toFixed(1) + ' KB',
-                  uploadDate: new Date().toISOString()
-                };
+                documents[docKey] = { status: 'Uploaded (No Preview)', fileName: file.name, fileSize: (file.size / 1024).toFixed(1) + ' KB' };
               }
             } else {
               documents[docKey] = { status: 'Pending' };
@@ -418,27 +479,57 @@
           state.applications.unshift(newApplication);
           saveData();
           
-          showToast('✅ Customer application submitted successfully! Documents uploaded.', 'success');
+          showToast('✅ Customer application submitted successfully!', 'success');
+          currentStatusFilter = 'all';
           showSection('leads');
         });
       }
       else if (section === 'leads') {
         if (myLeads.length === 0) {
-          content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12"><div class="text-6xl mb-4">📭</div><h4 class="text-lg font-black mb-2">No Leads Yet</h4><p class="text-slate-400">Click "Add Customer" to submit your first application.</p><button onclick="showSection('add')" class="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">➕ Add Customer</button></div>`;
+          content.innerHTML = `
+            <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl text-center py-12">
+              <div class="text-6xl mb-4">📭</div>
+              <h4 class="text-lg font-black mb-2">No Leads Found</h4>
+              <p class="text-slate-400">${currentStatusFilter !== 'all' ? 'No applications in this status. Try changing the filter.' : 'Click "Add Customer" to submit your first application.'}</p>
+              <div class="flex gap-2 justify-center mt-4">
+                <button onclick="setStatusFilter('all')" class="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm">Show All</button>
+                <button onclick="showSection('add')" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm">➕ Add Customer</button>
+              </div>
+            </div>
+          `;
         } else {
           content.innerHTML = `
             <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
-              <h4 class="text-lg font-black mb-6">📋 My Leads (${myLeads.length})</h4>
+              <div class="flex flex-wrap justify-between items-center mb-6 gap-3">
+                <h4 class="text-lg font-black">📋 My Applications (${myLeads.length})</h4>
+                <div class="flex gap-2">
+                  <button onclick="setStatusFilter('all')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${currentStatusFilter === 'all' ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-600'}">All</button>
+                  <button onclick="setStatusFilter('pending')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${currentStatusFilter === 'pending' ? 'bg-amber-600 text-white' : 'bg-slate-100 text-slate-600'}">Pending</button>
+                  <button onclick="setStatusFilter('sent')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${currentStatusFilter === 'sent' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}">Sent to Bank</button>
+                  <button onclick="setStatusFilter('approved')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${currentStatusFilter === 'approved' ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600'}">Approved</button>
+                  <button onclick="setStatusFilter('rejected')" class="px-3 py-1.5 rounded-lg text-xs font-medium ${currentStatusFilter === 'rejected' ? 'bg-rose-600 text-white' : 'bg-slate-100 text-slate-600'}">Rejected</button>
+                </div>
+              </div>
               <div class="space-y-3">
                 ${myLeads.map(app => `
                   <div class="p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer bg-white dark:bg-slate-800" onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">
                     <div class="flex justify-between items-start">
                       <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-2"><p class="font-bold text-blue-600">${app.id}</p><span class="px-2 py-1 rounded-full text-xs ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}">${app.status}</span></div>
+                        <div class="flex items-center gap-3 mb-2 flex-wrap">
+                          <p class="font-bold text-blue-600">${app.id}</p>
+                          <span class="px-2 py-1 rounded-full text-xs font-bold ${app.status === 'Bank Approved' ? 'bg-green-100 text-green-700' : app.status === 'Sent to Bank' ? 'bg-blue-100 text-blue-700' : app.status === 'Pending' ? 'bg-amber-100 text-amber-700' : app.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100'}">${app.status}</span>
+                          ${app.assignedBank ? `<span class="px-2 py-1 bg-teal-100 text-teal-700 rounded-full text-xs">🏦 ${app.assignedBank}</span>` : ''}
+                        </div>
                         <p class="font-semibold text-slate-900 dark:text-white">${app.customerName}</p>
                         <p class="text-sm text-slate-500">₹${(app.loanAmount || 0).toLocaleString()} • ${app.loanPurpose || app.loanType}</p>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-xs"><div><span class="text-slate-400">Salary:</span> <span class="font-semibold">₹${(app.monthlySalary || 0).toLocaleString()}</span></div><div><span class="text-slate-400">CIBIL:</span> <span class="font-semibold">${app.cibilScore || 'N/A'}</span></div><div><span class="text-slate-400">Submitted:</span> <span class="font-semibold">${app.submittedDate}</span></div><div><span class="text-slate-400">Bank:</span> <span class="font-semibold ${app.assignedBank ? 'text-green-600' : 'text-amber-600'}">${app.assignedBank || 'Not assigned'}</span></div></div>
-                        <div class="flex gap-3 mt-2 text-xs"><span class="text-slate-400">Documents:</span>${Object.entries(app.documents || {}).map(([key, val]) => `<span class="${val.status === 'Uploaded' ? 'text-green-600' : val.status === 'Uploaded (No Preview)' ? 'text-amber-600' : 'text-red-500'} ml-2">${key.toUpperCase()} ${val.status === 'Uploaded' ? '✓' : val.status === 'Uploaded (No Preview)' ? '⚠️' : '✗'}</span>`).join('')}</div>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2 text-xs">
+                          <div><span class="text-slate-400">Salary:</span> <span class="font-semibold">₹${(app.monthlySalary || 0).toLocaleString()}</span></div>
+                          <div><span class="text-slate-400">CIBIL:</span> <span class="font-semibold">${app.cibilScore || 'N/A'}</span></div>
+                          <div><span class="text-slate-400">Submitted:</span> <span class="font-semibold">${app.submittedDate}</span></div>
+                          <div><span class="text-slate-400">Updated:</span> <span class="font-semibold">${app.lastUpdated || app.submittedDate}</span></div>
+                        </div>
+                        <div class="flex gap-3 mt-2 text-xs flex-wrap"><span class="text-slate-400">Documents:</span>${Object.entries(app.documents || {}).map(([key, val]) => `<span class="${val.status === 'Uploaded' ? 'text-green-600' : val.status === 'Uploaded (No Preview)' ? 'text-amber-600' : 'text-red-500'} ml-2">${key.toUpperCase()} ${val.status === 'Uploaded' ? '✓' : val.status === 'Uploaded (No Preview)' ? '⚠️' : '✗'}</span>`).join('')}</div>
+                        ${app.decisionDate ? `<p class="text-xs text-slate-400 mt-2">📅 Decision date: ${app.decisionDate}</p>` : ''}
                       </div>
                       <button class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50 transition" onclick="event.stopPropagation();showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})">View Details</button>
                     </div>
@@ -450,9 +541,35 @@
         }
       }
       else if (section === 'commission') {
-        const approvedLeadsList = myLeads.filter(a => a.status === 'Bank Approved');
+        const approvedLeadsList = allMyLeads.filter(a => a.status === 'Bank Approved');
         const totalCommissionAmount = approvedLeadsList.reduce((sum, app) => sum + ((app.loanAmount || 0) * (currentUser.commissionRate / 100)), 0);
-        content.innerHTML = `<div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl"><h4 class="text-lg font-black mb-6">💰 Commission Summary</h4><div class="p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl text-center mb-6"><p class="text-3xl font-black text-purple-700">₹${totalCommissionAmount.toLocaleString()}</p><p class="text-sm text-slate-500 mt-1">Commission Rate: ${currentUser.commissionRate}%</p></div><div class="space-y-3"><p class="font-semibold">Approved Leads (${approvedLeadsList.length}):</p>${approvedLeadsList.map(app => `<div class="p-3 border rounded-lg flex justify-between"><div><p class="font-semibold">${app.customerName}</p><p class="text-xs text-slate-500">Loan: ₹${(app.loanAmount || 0).toLocaleString()}</p></div><div class="text-right"><p class="font-bold text-green-600">+₹${((app.loanAmount || 0) * (currentUser.commissionRate / 100)).toFixed(0)}</p></div></div>`).join('')}</div></div>`;
+        content.innerHTML = `
+          <div class="bg-white dark:bg-slate-900 rounded-3xl border p-6 shadow-xl">
+            <h4 class="text-lg font-black mb-6">💰 Commission Summary</h4>
+            <div class="p-6 bg-purple-50 dark:bg-purple-950/20 rounded-2xl text-center mb-6">
+              <p class="text-sm text-slate-500">Total Commission Earned</p>
+              <p class="text-4xl font-black text-purple-700">₹${totalCommissionAmount.toLocaleString()}</p>
+              <p class="text-xs text-slate-400 mt-1">Commission Rate: ${currentUser.commissionRate}%</p>
+            </div>
+            <div class="space-y-3">
+              <p class="font-semibold">Approved Leads (${approvedLeadsList.length}):</p>
+              ${approvedLeadsList.map(app => `
+                <div class="p-3 border rounded-lg flex justify-between items-center hover:bg-slate-50">
+                  <div>
+                    <p class="font-semibold">${app.customerName}</p>
+                    <p class="text-xs text-slate-500">Loan: ₹${(app.loanAmount || 0).toLocaleString()}</p>
+                    <p class="text-xs text-green-600">Approved on: ${app.decisionDate}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="font-bold text-green-600">+₹${((app.loanAmount || 0) * (currentUser.commissionRate / 100)).toFixed(0)}</p>
+                    <p class="text-xs text-slate-400">${currentUser.commissionRate}% of loan</p>
+                  </div>
+                </div>
+              `).join('')}
+              ${approvedLeadsList.length === 0 ? '<p class="text-center text-slate-400 py-4">No approved leads yet. Once your submitted applications are approved by bank, commission will appear here.</p>' : ''}
+            </div>
+          </div>
+        `;
       }
     }
 
