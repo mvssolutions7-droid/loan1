@@ -69,8 +69,9 @@
       const url = URL.createObjectURL(file);
       
       const previewModal = document.getElementById('preview-modal');
+      previewModal.classList.remove('hidden');
       previewModal.innerHTML = `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4 relative" onclick="event.stopPropagation()">
           <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <h4 class="font-bold">📄 Document Preview: ${file.name}</h4>
             <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
@@ -87,14 +88,14 @@
           </div>
         </div>
       `;
-      previewModal.classList.remove('hidden');
     }
 
     // Preview stored document from Base64
     function previewStoredDocument(dataUrl, fileName, fileType) {
       const previewModal = document.getElementById('preview-modal');
+      previewModal.classList.remove('hidden');
       previewModal.innerHTML = `
-        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4" onclick="event.stopPropagation()">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-auto p-4 mx-4 relative" onclick="event.stopPropagation()">
           <div class="flex justify-between items-center mb-3 pb-2 border-b">
             <h4 class="font-bold">📄 Document Preview: ${fileName}</h4>
             <button onclick="closePreviewModal()" class="text-2xl text-slate-400 hover:text-slate-600">&times;</button>
@@ -111,7 +112,6 @@
           </div>
         </div>
       `;
-      previewModal.classList.remove('hidden');
     }
 
     function closePreviewModal() {
@@ -120,6 +120,13 @@
       previewModal.innerHTML = '';
     }
 
+    // Close preview modal when clicking outside
+    document.getElementById('preview-modal')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closePreviewModal();
+      }
+    });
+
     window.previewUploadedFile = previewUploadedFile;
     window.previewStoredDocument = previewStoredDocument;
     window.closePreviewModal = closePreviewModal;
@@ -127,6 +134,7 @@
     // Show application details modal with document preview
     function showApplicationModal(app) {
       const modalContainer = document.getElementById('modal-container');
+      modalContainer.classList.remove('hidden');
       modalContainer.innerHTML = `
         <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="closeModal(event)">
           <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl mx-4" onclick="event.stopPropagation()">
@@ -193,7 +201,6 @@
           </div>
         </div>
       `;
-      modalContainer.classList.remove('hidden');
     }
 
     function closeModal() {
@@ -201,6 +208,13 @@
       modalContainer.classList.add('hidden');
       modalContainer.innerHTML = '';
     }
+
+    // Close modal when clicking outside
+    document.getElementById('modal-container')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
 
     window.closeModal = closeModal;
     window.showApplicationModal = showApplicationModal;
