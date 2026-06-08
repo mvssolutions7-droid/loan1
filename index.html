@@ -2,8 +2,8 @@
 <html lang="en" class="h-full">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bank Policy Update | Complete Loan Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Bank Policy Update | Complete Loan Management System | MVS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -14,33 +14,66 @@
           animation: {
             'bounce-slow': 'bounce 2s infinite',
             'pulse-slow': 'pulse 3s infinite',
+            'drift': 'drift 12s ease-in-out infinite alternate',
+            'shine': 'shine 8s linear infinite',
+          },
+          keyframes: {
+            drift: {
+              '0%': { transform: 'translate(0px, 0px) rotate(0deg)' },
+              '100%': { transform: 'translate(20px, -20px) rotate(3deg)' },
+            },
+            shine: {
+              '0%': { backgroundPosition: '200% center' },
+              '100%': { backgroundPosition: '-200% center' },
+            }
           }
         }
       }
     }
   </script>
   <style>
-    * { transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.3s ease; }
-    @keyframes slideIn { from { transform: translateY(1rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    * { transition: all 0.2s ease; }
+    @keyframes slideIn { from { transform: translateY(1.2rem); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-18px) rotate(2deg); }
     }
-    @keyframes glow {
-      0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.3); }
-      50% { box-shadow: 0 0 20px rgba(59,130,246,0.6); }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.3); }
+      50% { box-shadow: 0 0 28px rgba(59,130,246,0.7); }
     }
-    .animate-slide-in { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-    .animate-float { animation: float 4s ease-in-out infinite; }
-    .animate-glow { animation: glow 2s ease-in-out infinite; }
-    .hover-scale:hover { transform: scale(1.05); transition: transform 0.3s ease; }
-    .card-hover { transition: all 0.3s ease; }
-    .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -12px rgba(0,0,0,0.2); }
+    .animate-slide-in { animation: slideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1) forwards; }
+    .animate-fade-in { animation: fadeIn 0.6s ease-out forwards; }
+    .animate-float-slow { animation: floatSlow 5s ease-in-out infinite; }
+    .animate-glow-card { animation: glowPulse 3s infinite; }
+    .card-hover { transition: all 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
+    .card-hover:hover { transform: translateY(-12px) scale(1.02); box-shadow: 0 25px 35px -15px rgba(0,0,0,0.25); }
+    .bg-shine {
+      background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,0.25) 50%, transparent 75%);
+      background-size: 200% 100%;
+      animation: shine 6s linear infinite;
+    }
+    .glassmorph {
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .dark .glassmorph {
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    /* MVS Logo specific styling */
+    .mvs-logo-badge {
+      background: linear-gradient(135deg, #0f2b3d 0%, #1a4a6f 100%);
+      box-shadow: 0 8px 20px -6px rgba(0, 80, 120, 0.3);
+    }
+    .mvs-text-glow {
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
-<body class="h-full bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans overflow-x-hidden">
+<body class="h-full bg-gradient-to-br from-slate-50 via-indigo-50/30 to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans overflow-x-hidden">
 
   <div id="app-root" class="min-h-screen flex flex-col"></div>
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
@@ -92,41 +125,28 @@
       else if (type === 'info') classes = 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/80';
       else if (type === 'warning') classes = 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/80';
       toast.className = `p-4 rounded-xl shadow-lg border animate-slide-in ${classes}`;
-      toast.innerHTML = `<div class="text-xs font-semibold">${message}</div><button onclick="this.parentElement.remove()" class="ml-4 text-xs opacity-70">✕</button>`;
+      toast.innerHTML = `<div class="text-xs font-semibold flex justify-between items-center">${message}<button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-xs opacity-70 hover:opacity-100">✕</button></div>`;
       container.appendChild(toast);
       setTimeout(() => toast.remove(), 4000);
     }
 
     function loginUser(role, email, password) {
       let user = null;
-      
-      if (role === 'admin' && email === 'admin@bank.com') {
+      if (role === 'admin' && email === 'admin@bank.com' && password === 'password') {
         user = { id: 'ad1', name: 'Admin User', email, role: 'admin' };
       }
       else if (role === 'staff') {
         user = state.staff.find(s => s.email === email && s.password === password);
-        if (user && user.status !== 'Active') {
-          showToast('Your account is pending admin approval.', 'warning');
-          return false;
-        }
+        if (user && user.status !== 'Active') { showToast('Your account is pending admin approval.', 'warning'); return false; }
       }
       else if (role === 'banker') {
         user = state.bankers.find(b => b.email === email && b.password === password);
-        if (user && user.status !== 'Approved') {
-          showToast('Your account is pending admin approval.', 'warning');
-          return false;
-        }
-        if (user) {
-          const bank = state.banks.find(b => b.name === user.bankName);
-          user.bankDetails = bank;
-        }
+        if (user && user.status !== 'Approved') { showToast('Account pending admin approval.', 'warning'); return false; }
+        if (user) user.bankDetails = state.banks.find(b => b.name === user.bankName);
       }
       else if (role === 'connector') {
         user = state.connectors.find(c => c.email === email && c.password === password);
-        if (user && user.status !== 'Approved') {
-          showToast('Your account is pending admin approval.', 'warning');
-          return false;
-        }
+        if (user && user.status !== 'Approved') { showToast('Your connector account is pending approval.', 'warning'); return false; }
       }
       else if (role === 'customer') {
         user = state.customers.find(c => c.email === email && c.password === password);
@@ -135,431 +155,229 @@
       if (user) {
         state.currentUser = { ...user, role };
         saveData();
-        showToast(`Welcome ${user.name}!`, 'success');
+        showToast(`✨ Welcome back, ${user.name}! ✨`, 'success');
+        setTimeout(() => { window.location.href = `${role}-dashboard.html`; }, 600);
         return true;
       }
-      
       showToast('Invalid email or password', 'error');
       return false;
     }
 
     function registerUser(role, formData) {
       if (role === 'customer') {
-        if (state.customers.find(c => c.email === formData.email)) {
-          showToast('Email already registered!', 'error');
-          return false;
-        }
-        const newUser = {
-          id: 'c' + (state.customers.length + 1),
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          mobile: formData.mobile,
-          pinCode: formData.pinCode || '560001',
-          pan: formData.pan || 'ABCDE1234F',
-          salary: parseInt(formData.salary) || 30000,
-          cibil: parseInt(formData.cibil) || 700,
-          status: 'Active'
-        };
-        state.customers.push(newUser);
-        saveData();
-        showToast(`✅ Registration successful! Welcome ${newUser.name}. You can now login.`, 'success');
+        if (state.customers.find(c => c.email === formData.email)) { showToast('Email already registered!', 'error'); return false; }
+        const newUser = { id: 'c' + (state.customers.length + 1), name: formData.name, email: formData.email, password: formData.password, mobile: formData.mobile, pinCode: formData.pinCode || '560001', pan: formData.pan || 'ABCDE1234F', salary: parseInt(formData.salary) || 30000, cibil: parseInt(formData.cibil) || 700, status: 'Active' };
+        state.customers.push(newUser); saveData();
+        showToast(`🎉 Registration successful! Welcome ${newUser.name}.`, 'success');
         return true;
       }
       else if (role === 'connector') {
-        if (state.connectors.find(c => c.email === formData.email)) {
-          showToast('Email already registered!', 'error');
-          return false;
-        }
-        const newUser = {
-          id: 'con' + (state.connectors.length + 1),
-          name: formData.name,
-          company: formData.company,
-          email: formData.email,
-          password: formData.password,
-          mobile: formData.mobile,
-          status: 'Pending',
-          commissionRate: 1.0,
-          commissionEarned: 0
-        };
-        state.connectors.push(newUser);
-        saveData();
-        showToast(`✅ Registration submitted! Admin will approve your account soon.`, 'warning');
+        if (state.connectors.find(c => c.email === formData.email)) { showToast('Email already registered!', 'error'); return false; }
+        const newUser = { id: 'con' + (state.connectors.length + 1), name: formData.name, company: formData.company, email: formData.email, password: formData.password, mobile: formData.mobile, status: 'Pending', commissionRate: 1.0, commissionEarned: 0 };
+        state.connectors.push(newUser); saveData();
+        showToast(`✅ Registration submitted! Admin approval needed.`, 'warning');
         return true;
       }
       else if (role === 'staff') {
-        if (state.staff.find(s => s.email === formData.email)) {
-          showToast('Email already registered!', 'error');
-          return false;
-        }
-        const newUser = {
-          id: 'st' + (state.staff.length + 1),
-          name: formData.name,
-          employeeId: 'STF' + (state.staff.length + 1),
-          email: formData.email,
-          password: formData.password,
-          pinCodes: formData.pinCodes ? formData.pinCodes.split(',').map(p => p.trim()) : ['560001'],
-          role: formData.staffRole || 'Eligibility Staff',
-          status: 'Pending'
-        };
-        state.staff.push(newUser);
-        saveData();
-        showToast(`✅ Staff registration submitted! Admin approval required.`, 'warning');
+        if (state.staff.find(s => s.email === formData.email)) { showToast('Email already registered!', 'error'); return false; }
+        const newUser = { id: 'st' + (state.staff.length + 1), name: formData.name, employeeId: 'STF' + (state.staff.length + 1), email: formData.email, password: formData.password, pinCodes: formData.pinCodes ? formData.pinCodes.split(',').map(p => p.trim()) : ['560001'], role: formData.staffRole || 'Eligibility Staff', status: 'Pending' };
+        state.staff.push(newUser); saveData();
+        showToast(`👔 Staff registration submitted! Pending admin approval.`, 'warning');
         return true;
       }
       else if (role === 'banker') {
-        if (state.bankers.find(b => b.email === formData.email)) {
-          showToast('Email already registered!', 'error');
-          return false;
-        }
+        if (state.bankers.find(b => b.email === formData.email)) { showToast('Email already registered!', 'error'); return false; }
         const bank = state.banks.find(b => b.name === formData.bankName);
-        if (!bank) {
-          showToast('Please select a valid bank', 'error');
-          return false;
-        }
-        const newUser = {
-          id: 'bkr' + (state.bankers.length + 1),
-          name: formData.name,
-          bankId: bank.id,
-          bankName: formData.bankName,
-          email: formData.email,
-          password: formData.password,
-          whatsapp: formData.mobile,
-          status: 'Pending'
-        };
-        state.bankers.push(newUser);
-        saveData();
-        showToast(`✅ Banker registration submitted for ${formData.bankName}! Admin approval required.`, 'warning');
+        if (!bank) { showToast('Select valid bank', 'error'); return false; }
+        const newUser = { id: 'bkr' + (state.bankers.length + 1), name: formData.name, bankId: bank.id, bankName: formData.bankName, email: formData.email, password: formData.password, whatsapp: formData.mobile, status: 'Pending' };
+        state.bankers.push(newUser); saveData();
+        showToast(`🏦 Banker registration submitted for ${formData.bankName}. Await approval.`, 'warning');
         return true;
       }
       return false;
     }
 
+    // ========== CORRECT MVS LOGO (MVS SALES & MANAGEMENT SYSTEMS) ==========
+    function renderMVSCreativeLogo() {
+      return `
+        <div class="flex items-center gap-3 group cursor-pointer">
+          <div class="relative">
+            <div class="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur-xl opacity-60 group-hover:opacity-100 transition duration-500"></div>
+            <div class="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-800 via-blue-900 to-slate-800 flex items-center justify-center shadow-xl transform transition-all duration-300 group-hover:scale-105 ring-1 ring-white/20">
+              <span class="text-white font-black text-2xl tracking-tighter drop-shadow-md">M</span>
+            </div>
+          </div>
+          <div class="leading-tight">
+            <div class="flex flex-col">
+              <span class="font-black text-xl tracking-tight bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">MVS SALES</span>
+              <span class="text-[11px] font-bold tracking-wider text-blue-600 dark:text-blue-400 -mt-1">MANAGEMENT SYSTEMS PVT LTD</span>
+            </div>
+            <div class="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-widest mt-0.5 border-l-2 border-blue-500 pl-2">bank policy update • enterprise suite</div>
+          </div>
+        </div>
+      `;
+    }
+
     function renderLanding() {
       document.getElementById('app-root').innerHTML = `
-        <div class="min-h-screen">
-          <!-- Animated Background -->
+        <div class="min-h-screen relative overflow-hidden">
+          <!-- Dynamic Aurora Background with more vibrant colors -->
           <div class="fixed inset-0 overflow-hidden pointer-events-none">
-            <div class="absolute top-20 left-10 w-72 h-72 bg-blue-200 dark:bg-blue-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-            <div class="absolute bottom-20 right-10 w-96 h-96 bg-purple-200 dark:bg-purple-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float" style="animation-delay: 2s;"></div>
-            <div class="absolute top-1/2 left-1/2 w-80 h-80 bg-indigo-200 dark:bg-indigo-900/20 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style="animation-delay: 4s;"></div>
+            <div class="absolute top-0 -left-40 w-96 h-96 bg-blue-300 dark:bg-blue-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-float-slow" style="animation-duration: 14s;"></div>
+            <div class="absolute bottom-0 right-0 w-[32rem] h-[32rem] bg-indigo-300 dark:bg-indigo-900/30 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-float-slow" style="animation-delay: -5s; animation-duration: 18s;"></div>
+            <div class="absolute top-1/3 left-1/2 w-[28rem] h-[28rem] bg-purple-300/20 dark:bg-purple-900/20 rounded-full filter blur-3xl animate-float-slow" style="animation-delay: -8s;"></div>
+            <div class="absolute bottom-1/3 left-10 w-80 h-80 bg-cyan-300/20 dark:bg-cyan-900/20 rounded-full filter blur-3xl animate-float-slow" style="animation-duration: 20s;"></div>
           </div>
 
-          <!-- Header -->
-          <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-            <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-500/20 animate-glow">B</div>
-                <div>
-                  <h1 class="font-extrabold text-xl leading-tight tracking-tight bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Bank Policy Update</h1>
-                  <p class="text-[10px] text-slate-400 font-semibold tracking-wider">COMPLETE LOAN MANAGEMENT CRM</p>
-                </div>
-              </div>
+          <!-- Header with MVS Logo -->
+          <header class="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+            <div class="max-w-7xl mx-auto px-6 py-3 flex flex-wrap justify-between items-center gap-3">
+              ${renderMVSCreativeLogo()}
               <nav class="hidden md:flex gap-8 text-sm font-semibold">
-                <a href="#features" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Features</a>
-                <a href="#workflow" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Workflow</a>
-                <a href="#roles" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">6 Roles</a>
-                <a href="#stats" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Stats</a>
+                <a href="#features" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all hover:after:w-full">Features</a>
+                <a href="#workflow" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-500 hover:after:w-full">Workflow</a>
+                <a href="#roles" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-500 hover:after:w-full">6 Roles</a>
+                <a href="#stats" class="text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-all duration-300 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-blue-500 hover:after:w-full">Insights</a>
               </nav>
-              <button onclick="showLoginModal()" class="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-semibold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:scale-105 transition-all duration-300">Portal Login</button>
+              <button onclick="showLoginModal()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full text-sm font-bold shadow-lg shadow-blue-600/30 hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center gap-1 border border-white/20">✨ Portal Access</button>
             </div>
           </header>
 
-          <!-- Hero Section -->
+          <!-- Hero Section with MVS Branding -->
           <section class="relative px-6 pt-20 pb-24 text-center overflow-hidden">
-            <div class="max-w-5xl mx-auto">
-              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-wider mb-6 animate-pulse-slow">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                </span>
-                🚀 Now Live: Complete Loan Management System v5.0
+            <div class="max-w-5xl mx-auto relative z-10">
+              <div class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-md border border-slate-200/50 shadow-md text-blue-700 dark:text-blue-300 text-xs font-bold uppercase tracking-wider mb-8 animate-pulse-slow">
+                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>
+                🚀 MVS Enterprise Suite | Loan Management v5.0
               </div>
-              <h1 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                Smart Loan Management
-                <span class="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">For Modern Banking</span>
+              <h1 class="text-5xl md:text-7xl font-black text-slate-900 dark:text-white tracking-tight leading-[1.2]">
+                <span class="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-600 bg-clip-text text-transparent">MVS</span> Smart Loan Ecosystem<br>
+                for Modern Banking
               </h1>
-              <p class="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-3xl mx-auto mt-6 leading-relaxed">
-                End-to-end loan processing platform connecting Customers, Connectors, Staff, 
-                Bankers, and Admins in a seamless workflow with real-time tracking.
+              <p class="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mt-6 leading-relaxed font-medium">
+                Empowering financial institutions with MVS's unified loan management — real-time eligibility, AI-assisted document tracking, and commission automation.
               </p>
-              <div class="mt-10 flex flex-wrap justify-center gap-4">
-                <button onclick="showLoginModal()" class="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2">
-                  <span>Get Started</span>
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
-                </button>
-                <button onclick="document.getElementById('roles').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105">Explore Roles →</button>
+              <div class="mt-12 flex flex-wrap justify-center gap-5">
+                <button onclick="showLoginModal()" class="group px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-2xl shadow-xl transition-all duration-300 hover:scale-105 flex items-center gap-2 relative overflow-hidden"><span class="relative z-10">Launch Portal</span><svg class="w-5 h-5 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg><div class="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-700"></div></button>
+                <button onclick="document.getElementById('roles').scrollIntoView({behavior:'smooth'})" class="px-8 py-4 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 backdrop-blur-sm">Explore Ecosystem →</button>
               </div>
+              <div class="mt-12 flex justify-center gap-3 text-sm text-slate-500"><span>🏦 70+ Partner Banks</span><span>•</span><span>✅ 12k+ Active Users</span><span>•</span><span>⚡ 99.8% Uptime</span></div>
             </div>
+            <div class="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white/50 dark:from-slate-950/50 to-transparent pointer-events-none"></div>
           </section>
 
-          <!-- Features Section -->
-          <section id="features" class="max-w-7xl mx-auto px-6 py-16">
+          <!-- Features Section with Glass Cards -->
+          <section id="features" class="max-w-7xl mx-auto px-6 py-16 relative z-10">
             <div class="text-center mb-12">
-              <span class="px-4 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold">Why Choose Us</span>
-              <h2 class="text-3xl md:text-4xl font-black mt-4">Powerful Features</h2>
-              <p class="text-slate-500 max-w-2xl mx-auto mt-2">Everything you need to manage loans efficiently</p>
+              <span class="px-4 py-1.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 text-xs font-bold tracking-wide">Next-Gen Capabilities by MVS</span>
+              <h2 class="text-3xl md:text-4xl font-black mt-5 bg-gradient-to-r from-slate-800 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">Powerful Loan Ecosystem</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
-                <div class="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4"><span class="text-3xl">🔐</span></div>
-                <h3 class="font-bold text-lg mb-2">Role-Based Access</h3>
-                <p class="text-sm text-slate-500">6 distinct roles with granular permissions and PIN-based staff access.</p>
-              </div>
-              <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
-                <div class="w-14 h-14 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4"><span class="text-3xl">📄</span></div>
-                <h3 class="font-bold text-lg mb-2">Document Management</h3>
-                <p class="text-sm text-slate-500">Upload, preview, and verify documents securely with bank-grade encryption.</p>
-              </div>
-              <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
-                <div class="w-14 h-14 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4"><span class="text-3xl">📊</span></div>
-                <h3 class="font-bold text-lg mb-2">Real-time Analytics</h3>
-                <p class="text-sm text-slate-500">Dashboard analytics, reports, and activity logs for complete transparency.</p>
-              </div>
-              <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover">
-                <div class="w-14 h-14 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-4"><span class="text-3xl">💰</span></div>
-                <h3 class="font-bold text-lg mb-2">Commission Tracking</h3>
-                <p class="text-sm text-slate-500">Auto-calculated commissions for connectors based on approved loans.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+              <div class="glassmorph rounded-2xl p-6 card-hover backdrop-blur-sm"><div class="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center mb-5 text-3xl">🔐</div><h3 class="font-extrabold text-lg mb-2">Role-Based Fort Knox</h3><p class="text-sm text-slate-600 dark:text-slate-300">6 distinct roles + PIN-controlled staff modules with granular access.</p></div>
+              <div class="glassmorph rounded-2xl p-6 card-hover"><div class="w-14 h-14 rounded-2xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center mb-5 text-3xl">📄</div><h3 class="font-extrabold text-lg mb-2">Smart Document Hub</h3><p class="text-sm text-slate-600 dark:text-slate-300">Encrypted uploads, preview & real-time verification status.</p></div>
+              <div class="glassmorph rounded-2xl p-6 card-hover"><div class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center mb-5 text-3xl">📊</div><h3 class="font-extrabold text-lg mb-2">Live Analytics</h3><p class="text-sm text-slate-600 dark:text-slate-300">Dashboard metrics, transaction logs & AI-driven decision insights.</p></div>
+              <div class="glassmorph rounded-2xl p-6 card-hover"><div class="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mb-5 text-3xl">💰</div><h3 class="font-extrabold text-lg mb-2">Auto Commission Engine</h3><p class="text-sm text-slate-600 dark:text-slate-300">Instant calculation & tracking for connectors/DSA on approvals.</p></div>
+            </div>
+          </section>
+
+          <!-- Workflow Section (Interactive Steps) -->
+          <section id="workflow" class="bg-gradient-to-r from-blue-100/50 via-indigo-50/50 to-purple-100/50 dark:from-slate-800/30 dark:via-slate-800/20 dark:to-slate-800/30 py-20 my-6 rounded-3xl mx-6 backdrop-blur-sm">
+            <div class="max-w-7xl mx-auto px-6 text-center">
+              <span class="px-5 py-1.5 rounded-full bg-white/60 dark:bg-slate-700/60 text-blue-700 font-bold text-xs">Seamless Pipeline</span>
+              <h2 class="text-3xl md:text-4xl font-black mt-4 mb-12">From Application to Disbursal <span class="text-blue-600">in 5 Steps</span></h2>
+              <div class="flex flex-wrap justify-center items-center gap-6 md:gap-12">
+                <div class="text-center group"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition mx-auto mb-3">1</div><p class="font-bold">Apply</p><p class="text-xs text-slate-500">Customer/Connector</p></div><div class="text-3xl text-slate-400 hidden md:block">→</div>
+                <div class="text-center group"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition mx-auto mb-3">2</div><p class="font-bold">Verify</p><p class="text-xs text-slate-500">Eligibility Staff</p></div><div class="text-3xl text-slate-400 hidden md:block">→</div>
+                <div class="text-center group"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition mx-auto mb-3">3</div><p class="font-bold">Assign</p><p class="text-xs text-slate-500">Admin/Bank</p></div><div class="text-3xl text-slate-400 hidden md:block">→</div>
+                <div class="text-center group"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-rose-500 to-orange-600 text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition mx-auto mb-3">4</div><p class="font-bold">Approve</p><p class="text-xs text-slate-500">Banker Review</p></div><div class="text-3xl text-slate-400 hidden md:block">→</div>
+                <div class="text-center group"><div class="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-3xl font-black shadow-lg group-hover:scale-110 transition mx-auto mb-3">5</div><p class="font-bold">Disburse</p><p class="text-xs text-slate-500">Funds Released</p></div>
               </div>
             </div>
           </section>
 
-          <!-- Workflow Section -->
-          <section id="workflow" class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800/50 dark:to-slate-800/50 py-16">
-            <div class="max-w-7xl mx-auto px-6">
-              <div class="text-center mb-12">
-                <span class="px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-bold">How It Works</span>
-                <h2 class="text-3xl md:text-4xl font-black mt-4">Complete Loan Workflow</h2>
-              </div>
-              <div class="flex flex-wrap justify-center items-center gap-4 md:gap-8">
-                <div class="text-center"><div class="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-2">1</div><p class="font-semibold">Apply</p><p class="text-xs text-slate-500">Customer/Connector</p></div>
-                <div class="text-2xl text-slate-400">→</div>
-                <div class="text-center"><div class="w-16 h-16 rounded-full bg-indigo-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-2">2</div><p class="font-semibold">Review</p><p class="text-xs text-slate-500">Admin/Staff</p></div>
-                <div class="text-2xl text-slate-400">→</div>
-                <div class="text-center"><div class="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-2">3</div><p class="font-semibold">Assign</p><p class="text-xs text-slate-500">Bank Assignment</p></div>
-                <div class="text-2xl text-slate-400">→</div>
-                <div class="text-center"><div class="w-16 h-16 rounded-full bg-teal-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-2">4</div><p class="font-semibold">Approve</p><p class="text-xs text-slate-500">Banker Decision</p></div>
-                <div class="text-2xl text-slate-400">→</div>
-                <div class="text-center"><div class="w-16 h-16 rounded-full bg-emerald-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-2">5</div><p class="font-semibold">Disburse</p><p class="text-xs text-slate-500">Loan Sanctioned</p></div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Stats Section -->
-          <section id="stats" class="max-w-7xl mx-auto px-6 py-16">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div class="p-6"><div class="text-4xl font-black text-blue-600">₹50Cr+</div><p class="text-sm text-slate-500 mt-1">Loans Processed</p></div>
-              <div class="p-6"><div class="text-4xl font-black text-indigo-600">10,000+</div><p class="text-sm text-slate-500 mt-1">Happy Customers</p></div>
-              <div class="p-6"><div class="text-4xl font-black text-purple-600">50+</div><p class="text-sm text-slate-500 mt-1">Partner Banks</p></div>
-              <div class="p-6"><div class="text-4xl font-black text-teal-600">99.9%</div><p class="text-sm text-slate-500 mt-1">Uptime</p></div>
-            </div>
-          </section>
-
-          <!-- Roles Section - 6 Roles (Super Admin Removed) -->
-          <section id="roles" class="max-w-7xl mx-auto px-6 py-16">
-            <div class="text-center mb-12">
-              <span class="px-4 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs font-bold">6 Role Portals</span>
-              <h2 class="text-3xl md:text-4xl font-black mt-4">Choose Your Workspace</h2>
-              <p class="text-slate-500 max-w-2xl mx-auto mt-2">Different access levels for different stakeholders</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- 6 Role Cards with MVS brand touch -->
+          <section id="roles" class="max-w-7xl mx-auto px-6 py-20">
+            <div class="text-center mb-14"><span class="px-5 py-1.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 font-bold text-xs">Multi-Portal Access</span><h2 class="text-4xl font-black mt-4">Six Specialized Dashboards</h2><p class="text-slate-500 max-w-2xl mx-auto">Each role gets a tailor-made interface & permissions</p></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               ${[
-                { id: 'customer', title: 'Customer', icon: '👤', desc: 'Apply for loans, upload documents, track application status in real-time.', badge: 'Easy Apply', color: 'blue', gradient: 'from-blue-500 to-indigo-600' },
-                { id: 'connector', title: 'Connector/DSA', icon: '🤝', desc: 'Submit customer applications, manage leads, earn commissions on approvals.', badge: 'High Commission', color: 'purple', gradient: 'from-purple-500 to-pink-600' },
-                { id: 'staff', title: 'Staff', icon: '👔', desc: 'PIN-based access, verify documents, check eligibility, forward to banks.', badge: 'PIN Access', color: 'amber', gradient: 'from-amber-500 to-orange-600' },
-                { id: 'banker', title: 'Banker', icon: '🏦', desc: 'View only your bank\'s applications, approve/reject with secure access.', badge: 'Bank Specific', color: 'teal', gradient: 'from-teal-500 to-emerald-600' },
-                { id: 'admin', title: 'Admin', icon: '⚙️', desc: 'Full system control, assign to staff or banks, manage all policies.', badge: 'Super Control', color: 'red', gradient: 'from-red-500 to-rose-600' }
-              ].map(role => `
-                <div class="bg-white dark:bg-slate-800/50 rounded-2xl p-6 border border-slate-100 dark:border-slate-700/50 card-hover backdrop-blur-sm">
-                  <div class="flex items-center justify-between mb-4">
-                    <span class="text-4xl">${role.icon}</span>
-                    <span class="px-2 py-1 rounded-full bg-${role.color}-100 dark:bg-${role.color}-900/30 text-${role.color}-700 dark:text-${role.color}-300 text-[10px] font-bold">${role.badge}</span>
-                  </div>
-                  <h3 class="text-xl font-bold mb-2">${role.title}</h3>
-                  <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">${role.desc}</p>
-                  <div class="flex gap-2 mt-auto">
-                    <button onclick="showLoginModalWithRole('${role.id}')" class="flex-1 py-2.5 bg-gradient-to-r ${role.gradient} text-white rounded-xl text-xs font-bold hover:opacity-90 transition">Sign In</button>
-                    <button onclick="showRegisterModal('${role.id}')" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold hover:bg-slate-200 transition">Register</button>
-                  </div>
+                { id: 'customer', title: 'Customer', icon: '👤', desc: 'Apply instantly, track loan status, upload KYC documents & get personalized offers.', badge: 'Instant Apply', color: 'blue' },
+                { id: 'connector', title: 'Connector / DSA', icon: '🤝', desc: 'Submit multiple leads, monitor commission earnings & partner with top banks.', badge: 'Earn Commissions', color: 'purple' },
+                { id: 'staff', title: 'Staff (PIN based)', icon: '👔', desc: 'PIN secured eligibility check, document scrutiny & bank forwarding.', badge: 'Secure Access', color: 'amber' },
+                { id: 'banker', title: 'Banker', icon: '🏦', desc: 'View bank-specific applications, approve/disburse loans with full audit trail.', badge: 'Bank Specific', color: 'teal' },
+                { id: 'admin', title: 'Admin', icon: '⚙️', desc: 'Complete oversight: manage users, banks, policies & audit logs.', badge: 'Super Admin', color: 'rose' }
+              ].map(role => `<div class="bg-white/70 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-7 border border-slate-200/60 dark:border-slate-700/60 card-hover shadow-md"><div class="flex items-center justify-between mb-4"><span class="text-5xl drop-shadow-md">${role.icon}</span><span class="px-2.5 py-1 rounded-full bg-${role.color}-100 dark:bg-${role.color}-900/40 text-${role.color}-700 text-[11px] font-black">${role.badge}</span></div><h3 class="text-2xl font-black mb-2">${role.title}</h3><p class="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">${role.desc}</p><div class="flex gap-3"><button onclick="showLoginModalWithRole('${role.id}')" class="flex-1 py-2.5 bg-gradient-to-r from-${role.color}-500 to-${role.color}-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition">Sign In</button><button onclick="showRegisterModal('${role.id}')" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-white rounded-xl text-sm font-bold hover:bg-slate-200 transition">Register</button></div></div>`).join('')}
+            </div>
+          </section>
+
+          <!-- Stats with dynamic counters style -->
+          <section id="stats" class="max-w-7xl mx-auto px-6 py-12">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+              <div class="p-5 rounded-2xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm"><div class="text-5xl font-black text-blue-600">₹52Cr+</div><p class="font-semibold mt-1">Loans Processed</p></div>
+              <div class="p-5 rounded-2xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm"><div class="text-5xl font-black text-indigo-600">12.5K+</div><p class="font-semibold mt-1">Active Customers</p></div>
+              <div class="p-5 rounded-2xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm"><div class="text-5xl font-black text-purple-600">70+</div><p class="font-semibold mt-1">Partner Banks</p></div>
+              <div class="p-5 rounded-2xl bg-white/40 dark:bg-slate-800/30 backdrop-blur-sm"><div class="text-5xl font-black text-emerald-600">99.8%</div><p class="font-semibold mt-1">Uptime SLA</p></div>
+            </div>
+          </section>
+
+          <!-- MVS Brand CTA Section -->
+          <section class="py-16 px-6">
+            <div class="max-w-5xl mx-auto text-center relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-800 via-indigo-800 to-slate-900 p-12 shadow-2xl">
+              <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+              <div class="relative z-10">
+                <div class="inline-flex items-center gap-2 bg-white/10 backdrop-blur rounded-full px-4 py-1 mb-5"><span class="text-yellow-300">🏆</span><span class="text-xs font-bold text-white">MVS Enterprise Partner</span></div>
+                <h2 class="text-4xl font-black text-white">Accelerate your Loan Portfolio</h2>
+                <p class="text-blue-100 text-lg mt-3">Join the future of lending with MVS — faster, safer, smarter.</p>
+                <button onclick="showLoginModal()" class="mt-8 px-10 py-4 bg-white text-indigo-700 font-bold rounded-xl shadow-2xl hover:scale-105 transition-all duration-300">Get Started Free →</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Footer with MVS Branding -->
+          <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+            <div class="max-w-7xl mx-auto px-6 text-center">
+              <div class="flex justify-center mb-4">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md"><span class="text-white font-bold text-sm">M</span></div>
+                  <span class="text-white text-xs font-bold tracking-wider">MVS SALES & MANAGEMENT SYSTEMS PVT LTD</span>
                 </div>
-              `).join('')}
-            </div>
-          </section>
-
-          <!-- Testimonials -->
-          <section class="bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800/30 dark:to-slate-800/30 py-16">
-            <div class="max-w-7xl mx-auto px-6 text-center">
-              <h2 class="text-3xl font-black mb-8">Trusted by Leading Banks</h2>
-              <div class="flex flex-wrap justify-center gap-8 opacity-60">
-                <span class="text-2xl font-bold text-slate-400">🏦 HDFC Bank</span>
-                <span class="text-2xl font-bold text-slate-400">🏦 ICICI Bank</span>
-                <span class="text-2xl font-bold text-slate-400">🏦 SBI</span>
-                <span class="text-2xl font-bold text-slate-400">🏦 Axis Bank</span>
-                <span class="text-2xl font-bold text-slate-400">🏦 Kotak</span>
               </div>
-            </div>
-          </section>
-
-          <!-- CTA Section -->
-          <section class="py-16">
-            <div class="max-w-4xl mx-auto px-6 text-center">
-              <div class="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-12 text-white shadow-2xl">
-                <h2 class="text-3xl font-black mb-4">Ready to Get Started?</h2>
-                <p class="text-blue-100 mb-6">Join thousands of users managing loans efficiently</p>
-                <button onclick="showLoginModal()" class="px-8 py-3 bg-white text-indigo-600 font-bold rounded-xl hover:shadow-xl transition-all hover:scale-105">Login to Portal →</button>
-              </div>
-            </div>
-          </section>
-
-          <!-- Footer -->
-          <footer class="bg-slate-900 text-slate-400 py-12">
-            <div class="max-w-7xl mx-auto px-6 text-center">
-              <div class="flex items-center justify-center gap-2 mb-4">
-                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">B</div>
-                <span class="text-white font-bold">Bank Policy Update</span>
-              </div>
-              <p class="text-xs">© 2026 Secured Bank Policy Hub | 6 Role Workflow | PIN Based Staff Access | Bank-wise Email/WhatsApp</p>
+              <p class="text-xs">© 2026 MVS Sales & Management Systems Pvt Ltd — Intelligent Loan Management Ecosystem. All rights reserved. | Bank Policy Update v5.0</p>
             </div>
           </footer>
         </div>
       `;
     }
 
-    window.showLoginModalWithRole = (role) => { showLoginModal(role); };
-
+    window.showLoginModalWithRole = (role) => showLoginModal(role);
     window.showLoginModal = (preSelectedRole = 'customer') => {
-      document.getElementById('app-root').innerHTML += `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="if(event.target===this) closeModal()">
-          <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 w-96 shadow-2xl transform transition-all">
-            <div class="text-center mb-6">
-              <div class="w-16 h-16 mx-auto bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mb-3 shadow-lg">
-                <span class="text-2xl">🔐</span>
-              </div>
-              <h3 class="text-2xl font-bold">Welcome Back</h3>
-              <p class="text-sm text-slate-500 mt-1">Login to your workspace portal</p>
-            </div>
-            <select id="login-role" class="w-full p-3 border rounded-xl mb-3 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-blue-500">
-              <option value="customer" ${preSelectedRole === 'customer' ? 'selected' : ''}>👤 Customer</option>
-              <option value="connector" ${preSelectedRole === 'connector' ? 'selected' : ''}>🤝 Connector</option>
-              <option value="staff" ${preSelectedRole === 'staff' ? 'selected' : ''}>👔 Staff</option>
-              <option value="banker" ${preSelectedRole === 'banker' ? 'selected' : ''}>🏦 Banker</option>
-              <option value="admin" ${preSelectedRole === 'admin' ? 'selected' : ''}>⚙️ Admin</option>
-            </select>
-            <input type="email" id="login-email" placeholder="Email Address" class="w-full p-3 border rounded-xl mb-3 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-blue-500">
-            <input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-xl mb-4 bg-slate-50 dark:bg-slate-700 focus:ring-2 focus:ring-blue-500">
-            <button onclick="doLogin()" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:opacity-90 transition">Login</button>
-            <button onclick="closeModal()" class="w-full mt-2 py-2 text-slate-500 hover:text-slate-700 transition">Cancel</button>
-            <div class="mt-4 pt-3 border-t text-center">
-              <p class="text-xs text-slate-400">New user? <button onclick="switchToRegister()" class="text-blue-600 font-semibold">Register here</button></p>
-              <p class="text-xs text-slate-400 mt-2">Demo Password: <span class="font-mono font-bold">password</span></p>
-              <div class="grid grid-cols-2 gap-1 mt-2 text-xs">
-                <span class="text-blue-600">Customer: aarav@gmail.com</span>
-                <span class="text-purple-600">Connector: vikram@prime.com</span>
-                <span class="text-amber-600">Staff: meena@bank.com</span>
-                <span class="text-teal-600">Banker: amit@federaltrust.com</span>
-                <span class="text-red-600">Admin: admin@bank.com</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+      const modalDiv = document.createElement('div');
+      modalDiv.id = 'dynamic-modal';
+      modalDiv.className = 'fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] animate-fade-in';
+      modalDiv.onclick = (e) => { if(e.target === modalDiv) closeModal(); };
+      modalDiv.innerHTML = `
+        <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 w-96 shadow-2xl transform transition-all border border-slate-200 dark:border-slate-700">
+          <div class="text-center mb-6"><div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-600 to-indigo-600 rounded-full flex items-center justify-center shadow-lg"><span class="text-3xl">🔐</span></div><h3 class="text-2xl font-bold mt-3">MVS Portal Login</h3></div>
+          <select id="login-role" class="w-full p-3 border rounded-xl mb-3 bg-slate-50 dark:bg-slate-700"><option value="customer" ${preSelectedRole === 'customer' ? 'selected' : ''}>👤 Customer</option><option value="connector" ${preSelectedRole === 'connector' ? 'selected' : ''}>🤝 Connector</option><option value="staff" ${preSelectedRole === 'staff' ? 'selected' : ''}>👔 Staff</option><option value="banker" ${preSelectedRole === 'banker' ? 'selected' : ''}>🏦 Banker</option><option value="admin" ${preSelectedRole === 'admin' ? 'selected' : ''}>⚙️ Admin</option></select>
+          <input type="email" id="login-email" placeholder="Email Address" class="w-full p-3 border rounded-xl mb-3"><input type="password" id="login-password" placeholder="Password" class="w-full p-3 border rounded-xl mb-4"><button onclick="doLogin()" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold">Login</button><button onclick="closeModal()" class="w-full mt-2 py-2 text-slate-500">Cancel</button>
+          <div class="mt-4 pt-3 border-t text-center text-xs text-slate-400">Demo password: <span class="font-mono font-bold">password</span><div class="grid grid-cols-2 gap-1 mt-2"><span class="text-blue-600">aarav@gmail.com</span><span class="text-purple-600">vikram@prime.com</span><span class="text-amber-600">meena@bank.com</span><span class="text-teal-600">amit@federaltrust.com</span></div></div>
+        </div>`;
+      document.body.appendChild(modalDiv);
     };
 
     window.showRegisterModal = (role) => {
-      let extraFields = '';
-      let title = '';
+      let extraFields = '', title = '';
+      if (role === 'customer') { title = 'MVS Customer Registration'; extraFields = `<input type="text" placeholder="PIN Code" id="reg-pincode" class="w-full p-3 border rounded-xl"><input type="number" placeholder="Monthly Salary" id="reg-salary" class="w-full p-3 border rounded-xl"><input type="number" placeholder="CIBIL Score" id="reg-cibil" class="w-full p-3 border rounded-xl">`; }
+      else if (role === 'connector') { title = 'MVS Connector Registration'; extraFields = `<input type="text" placeholder="Company Name" id="reg-company" class="w-full p-3 border rounded-xl">`; }
+      else if (role === 'staff') { title = 'MVS Staff Registration'; extraFields = `<input type="text" placeholder="PIN Codes (comma)" id="reg-pincodes" class="w-full p-3 border rounded-xl"><select id="reg-staffrole" class="w-full p-3 border rounded-xl"><option>Eligibility Staff</option><option>Document Staff</option></select>`; }
+      else if (role === 'banker') { title = 'MVS Banker Registration'; extraFields = `<select id="reg-bankname" class="w-full p-3 border rounded-xl"><option>Select Bank</option>${state.banks.map(b => `<option>${b.name}</option>`).join('')}</select>`; }
       
-      if (role === 'customer') {
-        title = 'Customer Registration';
-        extraFields = `
-          <input type="text" id="reg-pincode" placeholder="PIN Code" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700">
-          <input type="number" id="reg-salary" placeholder="Monthly Salary (₹)" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700" required>
-          <input type="number" id="reg-cibil" placeholder="CIBIL Score" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700" required>
-        `;
-      } else if (role === 'connector') {
-        title = 'Connector Registration';
-        extraFields = `<input type="text" id="reg-company" placeholder="Company Name" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700" required>`;
-      } else if (role === 'staff') {
-        title = 'Staff Registration';
-        extraFields = `
-          <input type="text" id="reg-pincodes" placeholder="PIN Codes (comma separated)" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700" required>
-          <select id="reg-staffrole" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700">
-            <option value="Eligibility Staff">Eligibility Staff</option>
-            <option value="Document Staff">Document Staff</option>
-            <option value="Bank Sharing Staff">Bank Sharing Staff</option>
-          </select>
-        `;
-      } else if (role === 'banker') {
-        title = 'Banker Registration';
-        extraFields = `
-          <select id="reg-bankname" class="w-full p-3 border rounded-xl bg-slate-50 dark:bg-slate-700" required>
-            <option value="">Select Your Bank</option>
-            ${state.banks.map(bank => `<option value="${bank.name}">🏦 ${bank.name}</option>`).join('')}
-          </select>
-          <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-xs">⚠️ Account needs admin approval</div>
-        `;
-      }
-      
-      document.getElementById('app-root').innerHTML += `
-        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in" onclick="if(event.target===this) closeModal()">
-          <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 w-96 max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div class="text-center mb-6">
-              <div class="w-16 h-16 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mb-3"><span class="text-2xl">📝</span></div>
-              <h3 class="text-2xl font-bold">${title}</h3>
-            </div>
-            <form id="registerForm" class="space-y-3">
-              <input type="text" id="reg-name" placeholder="Full Name" class="w-full p-3 border rounded-xl" required>
-              <input type="email" id="reg-email" placeholder="Email" class="w-full p-3 border rounded-xl" required>
-              <input type="tel" id="reg-mobile" placeholder="Mobile" class="w-full p-3 border rounded-xl" required>
-              <input type="password" id="reg-password" placeholder="Password" class="w-full p-3 border rounded-xl" required>
-              ${extraFields}
-              <button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold">Register</button>
-              <button type="button" onclick="closeModal()" class="w-full mt-2 py-2 text-slate-500">Cancel</button>
-            </form>
-          </div>
-        </div>
-      `;
-      
-      document.getElementById('registerForm')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const formData = {
-          name: document.getElementById('reg-name').value,
-          email: document.getElementById('reg-email').value,
-          mobile: document.getElementById('reg-mobile').value,
-          password: document.getElementById('reg-password').value,
-          pinCode: document.getElementById('reg-pincode')?.value,
-          salary: document.getElementById('reg-salary')?.value,
-          cibil: document.getElementById('reg-cibil')?.value,
-          company: document.getElementById('reg-company')?.value,
-          pinCodes: document.getElementById('reg-pincodes')?.value,
-          staffRole: document.getElementById('reg-staffrole')?.value,
-          bankName: document.getElementById('reg-bankname')?.value
-        };
-        
-        if (registerUser(role, formData)) {
-          setTimeout(() => { closeModal(); showLoginModalWithRole(role); }, 2000);
-        }
-      });
+      const modalDiv = document.createElement('div'); modalDiv.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]'; modalDiv.onclick = (e) => { if(e.target === modalDiv) closeModal(); };
+      modalDiv.innerHTML = `<div class="bg-white dark:bg-slate-800 rounded-2xl p-8 w-96 max-h-[90vh] overflow-auto"><h3 class="text-2xl font-bold mb-4">${title}</h3><form id="registerForm">${extraFields}<input placeholder="Full Name" id="reg-name" class="w-full p-3 border rounded-xl mt-2"><input placeholder="Email" id="reg-email" class="w-full p-3 border rounded-xl mt-2"><input placeholder="Mobile" id="reg-mobile" class="w-full p-3 border rounded-xl mt-2"><input type="password" placeholder="Password" id="reg-password" class="w-full p-3 border rounded-xl mt-2"><button type="submit" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl mt-3 font-bold">Register</button><button type="button" onclick="closeModal()" class="w-full mt-2 py-2 text-slate-500">Cancel</button></form></div>`;
+      document.body.appendChild(modalDiv);
+      document.getElementById('registerForm')?.addEventListener('submit', (e) => { e.preventDefault(); const fd={name:document.getElementById('reg-name')?.value,email:document.getElementById('reg-email')?.value,mobile:document.getElementById('reg-mobile')?.value,password:document.getElementById('reg-password')?.value,pinCode:document.getElementById('reg-pincode')?.value,salary:document.getElementById('reg-salary')?.value,cibil:document.getElementById('reg-cibil')?.value,company:document.getElementById('reg-company')?.value,pinCodes:document.getElementById('reg-pincodes')?.value,staffRole:document.getElementById('reg-staffrole')?.value,bankName:document.getElementById('reg-bankname')?.value}; if(registerUser(role, fd)) closeModal(); });
     };
-
-    window.switchToRegister = () => {
-      const role = document.getElementById('login-role').value;
-      closeModal();
-      showRegisterModal(role);
-    };
-
-    window.doLogin = () => {
-      const role = document.getElementById('login-role').value;
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      
-      if (loginUser(role, email, password)) {
-        window.location.href = `${role}-dashboard.html`;
-      }
-    };
-
-    window.closeModal = () => { location.reload(); };
-
+    window.doLogin = () => { const role = document.getElementById('login-role').value, email = document.getElementById('login-email').value, pass = document.getElementById('login-password').value; loginUser(role, email, pass); };
+    window.closeModal = () => { const modal = document.getElementById('dynamic-modal'); if(modal) modal.remove(); const regModal = document.querySelector('.fixed.inset-0.bg-black\\/60'); if(regModal && regModal.id !== 'dynamic-modal') regModal.remove(); location.reload(); };
     renderLanding();
   </script>
 </body>
