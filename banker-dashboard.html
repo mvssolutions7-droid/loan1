@@ -38,47 +38,6 @@
       ];
     }
 
-    // Initialize sample applications if none exist
-    if (!state.applications || state.applications.length === 0) {
-      state.applications = [
-        {
-          id: 'APP-SAMPLE-001',
-          customerName: 'Aarav Sharma',
-          customerEmail: 'aarav@gmail.com',
-          customerMobile: '9876543210',
-          loanAmount: 500000,
-          monthlySalary: 40000,
-          cibilScore: 720,
-          loanPurpose: 'Home Renovation',
-          loanTenure: 36,
-          status: 'Pending',
-          assignedBank: 'Federal Trust Bank',
-          submittedBy: 'Customer',
-          submittedDate: '2026-05-10',
-          documents: {},
-          activityLog: [{ action: 'Application Submitted', timestamp: new Date().toISOString(), by: 'Customer' }]
-        },
-        {
-          id: 'APP-SAMPLE-002',
-          customerName: 'Priya Patel',
-          customerEmail: 'priya@yahoo.com',
-          customerMobile: '9812345678',
-          loanAmount: 1200000,
-          monthlySalary: 65000,
-          cibilScore: 780,
-          loanPurpose: 'Business Expansion',
-          loanTenure: 60,
-          status: 'Pending',
-          assignedBank: 'Federal Trust Bank',
-          submittedBy: 'Connector',
-          submittedDate: '2026-05-28',
-          documents: {},
-          activityLog: [{ action: 'Application Submitted', timestamp: new Date().toISOString(), by: 'Connector' }]
-        }
-      ];
-      saveData();
-    }
-
     function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
     function showToast(message, type = 'success') {
@@ -181,7 +140,7 @@
                       <div class="border rounded-lg p-3 bg-slate-50 dark:bg-slate-800/50">
                         <div class="flex items-center justify-between mb-2">
                           <span class="text-sm font-semibold capitalize">${docName.replace(/([A-Z])/g, ' $1').trim()}</span>
-                          <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
+                          <span class="text-xs px-2 py-0.5 rounded-full ${docData.status === 'Uploaded' ? 'bg-green-100 text-green-700' : docData.status === 'Uploaded (No Preview)' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-500'}">${docData.status || 'Pending'}</span>
                         </div>
                         ${docData.dataUrl ? `
                           <div class="mt-2">
@@ -408,7 +367,7 @@
                         <input type="text" id="remarks-${app.id}" placeholder="Remarks (optional)" class="px-3 py-2 border rounded-lg text-sm w-48">
                         <button onclick="updateApplicationStatus('${app.id}', document.getElementById('decision-${app.id}').value, document.getElementById('remarks-${app.id}').value)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition">Submit Decision</button>
                       </div>
-                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm">View Full Details</button>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-gray-600 text-white rounded-lg text-sm">View Full Details & Documents</button>
                     </div>
                   </div>
                 `).join('')}
@@ -441,7 +400,7 @@
                         <p class="text-xs text-green-600 mt-1">Approved on: ${app.decisionDate}</p>
                         ${app.bankerRemarks ? `<p class="text-xs text-slate-500 mt-1">Remarks: ${app.bankerRemarks}</p>` : ''}
                       </div>
-                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View</button>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View Documents</button>
                     </div>
                   </div>
                 `).join('')}
@@ -474,7 +433,7 @@
                         <p class="text-xs text-rose-600 mt-1">Rejected on: ${app.decisionDate}</p>
                         ${app.bankerRemarks ? `<p class="text-xs text-slate-500 mt-1">Remarks: ${app.bankerRemarks}</p>` : ''}
                       </div>
-                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View</button>
+                      <button onclick="showApplicationModal(${JSON.stringify(app).replace(/"/g, '&quot;')})" class="px-3 py-1 border rounded-lg text-sm hover:bg-slate-50">View Documents</button>
                     </div>
                   </div>
                 `).join('')}
